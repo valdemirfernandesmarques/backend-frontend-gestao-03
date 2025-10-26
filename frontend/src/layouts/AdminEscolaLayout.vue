@@ -3,13 +3,13 @@
     <nav class="sidebar">
       <div class="sidebar-header" @click="handleLogoClick">
         <div class="logo-upload-container">
-          <img v-if="logoUrl" :src="logoUrl" alt="Logotipo da Escola" class="school-logo">
+          <img v-if="logoUrl" :src="logoUrl" alt="Logotipo da Escola" class="school-logo" />
           <h1 v-else>Gestão <span>em</span> Dança</h1>
-
           <i class="fas fa-camera upload-icon"></i>
-          <input type="file" ref="logoFileInput" @change="handleFileChange" accept="image/*" style="display: none;">
+          <input type="file" ref="logoFileInput" @change="handleFileChange" accept="image/*" style="display: none;" />
         </div>
       </div>
+
       <ul class="menu">
         <li :class="{ active: $route.path === '/escola' }">
           <router-link to="/escola"><i class="fas fa-tachometer-alt"></i> Dashboard</router-link>
@@ -38,12 +38,20 @@
         <li :class="{ active: $route.path.startsWith('/escola/vendas') }">
           <router-link to="/escola/vendas"><i class="fas fa-store"></i> Vendas</router-link>
         </li>
+        <li :class="{ active: $route.path.startsWith('/escola/comissoes') }">
+          <router-link to="/escola/comissoes"><i class="fas fa-percentage"></i> Comissão</router-link>
+        </li>
+        <li :class="{ active: $route.path.startsWith('/escola/mensalidades') }">
+          <router-link to="/escola/mensalidades"><i class="fas fa-calendar-check"></i> Mensalidade</router-link>
+        </li>
       </ul>
+
       <div class="sidebar-footer">
         <router-link to="#"><i class="fas fa-cog"></i> Configurações</router-link>
         <a href="#" @click.prevent="logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
       </div>
     </nav>
+
     <main class="main-content">
       <header class="main-header">
         <h2>Seja bem-vinda, {{ userName }}!</h2>
@@ -51,71 +59,66 @@
           <img src="https://i.pravatar.cc/40" alt="Foto do Usuário" />
         </div>
       </header>
+
       <router-view></router-view>
     </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import api from '../api/api'; // import ajustado para frontend
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '../api/api' 
 
-const router = useRouter();
-const userName = ref('Ana');
-const logoUrl = ref(null); // Estado para exibir a logo
-const logoFileInput = ref(null); // Ref do input file
+// ATENÇÃO: Usamos esta URL para o STATIC content (/uploads)
+const BASE_URL_SERVER = 'http://localhost:3000' 
 
-// ID da escola atual (ajuste conforme sua lógica ou usuário logado)
-const escolaId = ref(5); // exemplo: 5
-
-const BASE_URL = 'http://localhost:3000'; // URL do backend
+const router = useRouter()
+const userName = ref('Ana')
+const logoUrl = ref(null)
+const logoFileInput = ref(null)
+const escolaId = ref(5)
 
 const logout = () => {
-  localStorage.removeItem('token');
-  localStorage.removeItem('role');
-  router.push('/login');
-};
+  localStorage.removeItem('token')
+  localStorage.removeItem('role')
+  router.push('/login')
+}
 
-// --- Carrega logotipo atual da escola ---
 const carregarLogo = async () => {
   try {
-    const response = await api.get(`/escolas/${escolaId.value}`);
-    if (response.data.logoUrl) {
-      logoUrl.value = `${BASE_URL}${response.data.logoUrl}`; // concatena com host do backend
-    }
+    // Agora 'api.get' chama http://localhost:3000/api/escolas/5
+    const response = await api.get(`/escolas/${escolaId.value}`) 
+    
+    // O backend retorna '/uploads/logo.jpg', então anexamos a URL do servidor
+    if (response.data.logoUrl) logoUrl.value = `${BASE_URL_SERVER}${response.data.logoUrl}`
   } catch (error) {
-    console.error("Erro ao carregar logotipo:", error);
+    console.error('Erro ao carregar logotipo:', error)
   }
-};
+}
 
-// --- Funções de Upload de Logotipo ---
-const handleLogoClick = () => {
-  logoFileInput.value.click();
-};
+const handleLogoClick = () => logoFileInput.value.click()
 
-const handleFileChange = async (event) => {
-  const file = event.target.files[0];
-  if (!file) return;
+const handleFileChange = async event => {
+  const file = event.target.files[0]
+  if (!file) return
 
-  const formData = new FormData();
-  formData.append('logo', file);
+  const formData = new FormData()
+  formData.append('logo', file)
 
   try {
-    const response = await api.put(`/escolas/${escolaId.value}/logo`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    // Atualiza a logo no frontend
-    logoUrl.value = `${BASE_URL}${response.data.logoUrl}`;
-    console.log('Upload realizado com sucesso!');
+    const response = await api.put( 
+      `/escolas/${escolaId.value}/logo`,
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } } 
+    )
+    logoUrl.value = `${BASE_URL_SERVER}${response.data.logoUrl}`
   } catch (error) {
-    console.error('Erro ao fazer upload do logotipo:', error);
+    console.error('Erro ao fazer upload do logotipo:', error)
   }
-};
+}
 
-onMounted(() => {
-  carregarLogo();
-});
+onMounted(() => carregarLogo())
 </script>
 
 <style scoped>
@@ -124,6 +127,7 @@ onMounted(() => {
   height: 100vh;
 }
 
+/* Sidebar */
 .sidebar {
   width: 250px;
   background-color: #1a202c;
@@ -132,47 +136,37 @@ onMounted(() => {
   flex-direction: column;
   justify-content: space-between;
 }
-
 .sidebar-header {
   padding: 20px;
   text-align: center;
   cursor: pointer;
   position: relative;
 }
-
 .logo-upload-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
-
-/* =========================
-   Ajuste do tamanho do logotipo
-   Alterar max-width e height aqui para aumentar ou diminuir
-   ========================= */
 .school-logo {
-  max-width: 240px; /* largura maior */
-  height: 115px;    /* altura maior */
+  max-width: 240px;
+  height: 115px;
   object-fit: contain;
   margin-bottom: 5px;
 }
-
 .sidebar-header h1 {
   font-size: 20px;
   line-height: 1.2;
 }
-
 .sidebar-header span {
   color: #63b3ed;
 }
-
 .upload-icon {
   position: absolute;
   top: 5px;
   right: 5px;
   color: #63b3ed;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: rgba(255,255,255,0.9);
   padding: 5px;
   border-radius: 50%;
   font-size: 0.8em;
@@ -180,7 +174,6 @@ onMounted(() => {
   transition: opacity 0.2s;
   pointer-events: none;
 }
-
 .sidebar-header:hover .upload-icon {
   opacity: 1;
 }
@@ -190,15 +183,12 @@ onMounted(() => {
   padding: 0;
   margin: 0;
 }
-
 .menu li {
   margin: 0;
 }
-
 .menu li.active {
   background-color: #2d3748;
 }
-
 .menu li a {
   display: flex;
   align-items: center;
@@ -206,33 +196,31 @@ onMounted(() => {
   color: white;
   text-decoration: none;
 }
-
 .menu li a i {
   margin-right: 10px;
 }
-
 .menu li a:hover {
   background-color: #2d3748;
 }
 
+/* Footer */
 .sidebar-footer {
   padding: 15px 20px;
   display: flex;
   flex-direction: column;
 }
-
 .sidebar-footer a {
   color: white;
   text-decoration: none;
   margin-top: 5px;
 }
 
+/* Main content */
 .main-content {
   flex: 1;
   background-color: #f7fafc;
   overflow-y: auto;
 }
-
 .main-header {
   display: flex;
   justify-content: space-between;
@@ -241,7 +229,6 @@ onMounted(() => {
   background-color: white;
   border-bottom: 1px solid #e2e8f0;
 }
-
 .user-profile img {
   border-radius: 50%;
 }

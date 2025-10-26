@@ -50,7 +50,7 @@ const routes = [
       { path: 'turmas', name: 'EscolaTurmas', component: Turma },
       { path: 'professor-modalidade', name: 'EscolaProfessorModalidade', component: ProfessorModalidade },
       { path: 'matriculas', name: 'EscolaMatriculas', component: Matricula },
-      { path: 'mensalidades', name: 'EscolaMensalidades', component: Mensalidade },
+      { path: 'mensalidades', name: 'EscolaMensalidades', component: Mensalidade }, // ✅ Mensalidades
       { path: 'modalidades', name: 'EscolaModalidades', component: Modalidade },
       { path: 'pagamentos', name: 'EscolaPagamentos', component: Pagamentos },
       { path: 'produtos', name: 'EscolaProdutos', component: Produtos },
@@ -59,7 +59,7 @@ const routes = [
       { path: 'relatorios', name: 'EscolaRelatorios', component: Relatorio },
       { path: 'estoque', name: 'EscolaEstoque', component: Estoque },
       { path: 'funcionarios', name: 'EscolaFuncionarios', component: Funcionarios },
-      { path: 'comissao', name: 'EscolaComissao', component: Comissao }
+      { path: 'comissoes', name: 'EscolaComissoes', component: Comissao }
     ]
   },
 
@@ -92,10 +92,7 @@ const routes = [
   },
 
   // 🔹 Rota fallback
-  {
-    path: '/:pathMatch(.*)*',
-    redirect: '/login'
-  }
+  { path: '/:pathMatch(.*)*', redirect: '/login' }
 ]
 
 const router = createRouter({
