@@ -47,17 +47,34 @@ db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
 
 db.Pagamento = require("./Pagamento")(sequelize, DataTypes);
 
-// ✅ MODEL DO FINANCEIRO (ESSENCIAL)
+// ===============================
+// FINANCEIRO ADMIN_ESCOLA
+// ===============================
 db.LancamentoFinanceiro = require("./LancamentoFinanceiro")(sequelize, DataTypes);
 
 db.Comissao = require("./Comissao")(sequelize, DataTypes);
 
+// ===============================
+// VENDAS
+// ===============================
 db.Produto = require("./Produto")(sequelize, DataTypes);
 db.Venda = require("./Venda")(sequelize, DataTypes);
 db.VendaItem = require("./VendaItem")(sequelize, DataTypes);
 
+// ===============================
+// RELACIONAMENTOS
+// ===============================
 db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
+
+// ===============================
+// ISENÇÃO DE TAXA (SUPER_ADMIN)
+// ===============================
 db.IsencaoTaxa = require("./IsencaoTaxa")(sequelize, DataTypes);
+
+// ===============================
+// FINANCEIRO SUPER_ADMIN (PLATAFORMA)
+// ===============================
+db.TransacaoFinanceira = require("./TransacaoFinanceira")(sequelize, DataTypes);
 
 // ===============================
 // EXECUÇÃO DAS ASSOCIAÇÕES

@@ -1,176 +1,202 @@
-// backend/controllers/mensalidadeController.js
-const db = require('../models');
+const { Mensalidade, Matricula, Aluno, Turma } = require('../models');
+const { Op } = require('sequelize');
 
-// Função interna para criar mensalidade
-const criarMensalidade = async (dados, transaction) => {
-    return db.Mensalidade.create(dados, { transaction });
-};
-
-// Endpoint POST: Cadastrar mensalidade
+// ====================================
+// CRIAR MENSALIDADE
+// ====================================
 const cadastrarMensalidade = async (req, res) => {
-    try {
-        const { alunoId, turmaId, valor, dataVencimento } = req.body;
+  try {
+    const { alunoId, turmaId, valor, dataVencimento, status } = req.body;
 
-        // Validação dos campos
-        if (!alunoId || !turmaId || !valor || !dataVencimento) {
-            return res.status(400).json({
-                error: 'Todos os campos (alunoId, turmaId, valor, dataVencimento) são obrigatórios.'
-            });
-        }
-
-        // Verificar se a matrícula já existe
-        let matricula = await db.Matricula.findOne({
-            where: { alunoId, turmaId }
-        });
-
-        // Se não existir, criar a matrícula
-        if (!matricula) {
-            // Buscar escolaId da turma
-            const turma = await db.Turma.findByPk(turmaId);
-            if (!turma) {
-                return res.status(404).json({ error: 'Turma não encontrada.' });
-            }
-
-            matricula = await db.Matricula.create({
-                dataMatricula: new Date(),
-                status: 'ATIVA',
-                alunoId,
-                turmaId,
-                escolaId: turma.escolaId,
-                valorMensalidade: valor
-            });
-        }
-
-        // Criar mensalidade
-        const mensalidade = await db.Mensalidade.create({
-            matriculaId: matricula.id,
-            escolaId: matricula.escolaId,
-            valor,
-            dataVencimento,
-            status: 'PENDENTE'
-        });
-
-        res.status(201).json({
-            message: 'Mensalidade criada com sucesso!',
-            mensalidade
-        });
-    } catch (error) {
-        console.error('Erro ao cadastrar mensalidade:', error);
-        res.status(500).json({
-            error: 'Erro ao cadastrar mensalidade',
-            details: error.message
-        });
+    if (!alunoId || !turmaId || !valor || !dataVencimento) {
+      return res.status(400).json({ erro: 'Campos obrigatórios não preenchidos.' });
     }
+
+    const matricula = await Matricula.findOne({
+      where: { alunoId, turmaId }
+    });
+
+    if (!matricula) {
+      return res.status(404).json({ erro: 'Matrícula não encontrada.' });
+    }
+
+    const mensalidade = await Mensalidade.create({
+      matriculaId: matricula.id,
+      escolaId: matricula.escolaId,
+      valor,
+      dataVencimento,
+      status: status || 'PENDENTE'
+    });
+
+    return res.status(201).json(mensalidade);
+  } catch (err) {
+    console.error('Erro ao cadastrar mensalidade:', err);
+    return res.status(500).json({ erro: 'Erro interno ao cadastrar mensalidade.' });
+  }
 };
 
-// Listar todas as mensalidades
+// ====================================
+// LISTAR MENSALIDADES (🔴 CORRIGIDO)
+// ====================================
 const listarMensalidades = async (req, res) => {
-    try {
-        const whereClause = req.user.perfil === 'ADMIN_ESCOLA'
-            ? { escolaId: req.user.escolaId }
-            : {};
+  try {
+    const escolaId =
+      req.user.perfil === 'SUPER_ADMIN'
+        ? req.query.escolaId
+        : req.user.escolaId;
 
-        const mensalidades = await db.Mensalidade.findAll({
-            where: whereClause,
-            include: [
-                {
-                    model: db.Matricula,
-                    as: 'matricula',
-                    include: [
-                        { model: db.Aluno, as: 'aluno' },
-                        { model: db.Turma, as: 'turma' }
-                    ]
-                }
-            ]
-        });
-
-        res.json(mensalidades);
-    } catch (error) {
-        res.status(500).json({
-            error: 'Erro ao listar mensalidades',
-            details: error.message
-        });
+    if (!escolaId) {
+      return res.status(400).json({ erro: 'escolaId é obrigatório.' });
     }
+
+    const mensalidades = await Mensalidade.findAll({
+      where: { escolaId },
+      include: [
+        {
+          model: Matricula,
+          as: 'matricula',
+          include: [
+            { model: Aluno, as: 'aluno', attributes: ['id', 'nome'] },
+            { model: Turma, as: 'turma', attributes: ['id', 'nome'] }
+          ]
+        }
+      ],
+      order: [['dataVencimento', 'ASC']]
+    });
+
+    return res.json(mensalidades);
+  } catch (err) {
+    console.error('Erro ao listar mensalidades:', err);
+    return res.status(500).json({ erro: 'Erro interno ao listar mensalidades.' });
+  }
 };
 
-// Obter mensalidade por ID
+// ====================================
+// OBTER MENSALIDADE POR ID
+// ====================================
 const obterMensalidade = async (req, res) => {
-    try {
-        const mensalidade = await db.Mensalidade.findByPk(req.params.id, {
-            include: [
-                {
-                    model: db.Matricula,
-                    as: 'matricula',
-                    include: [
-                        { model: db.Aluno, as: 'aluno' },
-                        { model: db.Turma, as: 'turma' }
-                    ]
-                }
-            ]
-        });
+  try {
+    const { id } = req.params;
 
-        if (!mensalidade) return res.status(404).json({ error: 'Mensalidade não encontrada' });
-        if (req.user.perfil === 'ADMIN_ESCOLA' && mensalidade.escolaId !== req.user.escolaId) {
-            return res.status(403).json({ error: 'Acesso negado a esta mensalidade.' });
+    const mensalidade = await Mensalidade.findByPk(id, {
+      include: [
+        {
+          model: Matricula,
+          as: 'matricula',
+          include: [
+            { model: Aluno, as: 'aluno', attributes: ['id', 'nome'] },
+            { model: Turma, as: 'turma', attributes: ['id', 'nome'] }
+          ]
         }
+      ]
+    });
 
-        res.json(mensalidade);
-    } catch (error) {
-        res.status(500).json({
-            error: 'Erro ao buscar mensalidade',
-            details: error.message
-        });
+    if (!mensalidade) {
+      return res.status(404).json({ erro: 'Mensalidade não encontrada.' });
     }
+
+    return res.json(mensalidade);
+  } catch (err) {
+    console.error('Erro ao obter mensalidade:', err);
+    return res.status(500).json({ erro: 'Erro interno ao obter mensalidade.' });
+  }
 };
 
-// Atualizar mensalidade
+// ====================================
+// ATUALIZAR MENSALIDADE
+// ====================================
 const atualizarMensalidade = async (req, res) => {
-    const t = await db.sequelize.transaction();
-    try {
-        const mensalidade = await db.Mensalidade.findByPk(req.params.id, { transaction: t });
-        if (!mensalidade) {
-            await t.rollback();
-            return res.status(404).json({ error: 'Mensalidade não encontrada' });
-        }
+  try {
+    const { id } = req.params;
+    const { alunoId, turmaId, valor, dataVencimento, status } = req.body;
 
-        if (req.user.perfil === 'ADMIN_ESCOLA' && mensalidade.escolaId !== req.user.escolaId) {
-            await t.rollback();
-            return res.status(403).json({ error: 'Acesso negado a esta mensalidade.' });
-        }
-
-        const { dataVencimento, status, valor } = req.body;
-        await mensalidade.update({ dataVencimento, status, valor }, { transaction: t });
-
-        await t.commit();
-        res.json({ message: 'Mensalidade atualizada com sucesso!', mensalidade });
-    } catch (error) {
-        await t.rollback();
-        res.status(500).json({ error: 'Erro ao atualizar mensalidade', details: error.message });
+    const mensalidade = await Mensalidade.findByPk(id);
+    if (!mensalidade) {
+      return res.status(404).json({ erro: 'Mensalidade não encontrada.' });
     }
+
+    let matriculaId = mensalidade.matriculaId;
+    let escolaId = mensalidade.escolaId;
+
+    if (alunoId && turmaId) {
+      const matricula = await Matricula.findOne({ where: { alunoId, turmaId } });
+      if (!matricula) {
+        return res.status(404).json({ erro: 'Matrícula não encontrada.' });
+      }
+      matriculaId = matricula.id;
+      escolaId = matricula.escolaId;
+    }
+
+    await mensalidade.update({
+      matriculaId,
+      escolaId,
+      valor: valor ?? mensalidade.valor,
+      dataVencimento: dataVencimento || mensalidade.dataVencimento,
+      status: status || mensalidade.status
+    });
+
+    return res.json(mensalidade);
+  } catch (err) {
+    console.error('Erro ao atualizar mensalidade:', err);
+    return res.status(500).json({ erro: 'Erro interno ao atualizar mensalidade.' });
+  }
 };
 
-// Deletar mensalidade
+// ====================================
+// DELETAR MENSALIDADE
+// ====================================
 const deletarMensalidade = async (req, res) => {
-    try {
-        const mensalidade = await db.Mensalidade.findByPk(req.params.id);
-        if (!mensalidade) return res.status(404).json({ error: 'Mensalidade não encontrada' });
+  try {
+    const { id } = req.params;
 
-        if (req.user.perfil === 'ADMIN_ESCOLA' && mensalidade.escolaId !== req.user.escolaId) {
-            return res.status(403).json({ error: 'Acesso negado a esta mensalidade.' });
-        }
-
-        await mensalidade.destroy();
-        res.json({ message: 'Mensalidade deletada com sucesso!' });
-    } catch (error) {
-        res.status(500).json({ error: 'Erro ao deletar mensalidade', details: error.message });
+    const mensalidade = await Mensalidade.findByPk(id);
+    if (!mensalidade) {
+      return res.status(404).json({ erro: 'Mensalidade não encontrada.' });
     }
+
+    await mensalidade.destroy();
+    return res.json({ mensagem: 'Mensalidade deletada com sucesso.' });
+  } catch (err) {
+    console.error('Erro ao deletar mensalidade:', err);
+    return res.status(500).json({ erro: 'Erro interno ao deletar mensalidade.' });
+  }
 };
 
+// ====================================
+// PAGAR MENSALIDADE
+// ====================================
+const pagarMensalidade = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const mensalidade = await Mensalidade.findByPk(id);
+    if (!mensalidade) {
+      return res.status(404).json({ erro: 'Mensalidade não encontrada.' });
+    }
+
+    mensalidade.status = 'PAGO';
+    mensalidade.dataPagamento = new Date();
+
+    await mensalidade.save();
+
+    return res.json({
+      mensagem: 'Mensalidade paga com sucesso.',
+      mensalidade
+    });
+  } catch (err) {
+    console.error('Erro ao pagar mensalidade:', err);
+    return res.status(500).json({ erro: 'Erro interno ao pagar mensalidade.' });
+  }
+};
+
+// ====================================
+// EXPORT
+// ====================================
 module.exports = {
-    criarMensalidade,
-    cadastrarMensalidade,
-    listarMensalidades,
-    obterMensalidade,
-    atualizarMensalidade,
-    deletarMensalidade,
+  cadastrarMensalidade,
+  listarMensalidades,
+  obterMensalidade,
+  atualizarMensalidade,
+  deletarMensalidade,
+  pagarMensalidade
 };

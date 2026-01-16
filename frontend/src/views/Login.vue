@@ -5,118 +5,145 @@
 
       <form @submit.prevent="handleLogin">
         <div class="form-group">
-          <label for="email">E-mail</label>
-          <input
-            type="email"
-            id="email"
-            v-model="email"
-            required
-            placeholder="Digite seu e-mail"
-          />
+          <label>E-mail</label>
+          <input v-model="email" type="email" required />
         </div>
 
         <div class="form-group">
-          <label for="senha">Senha</label>
-          <input
-            type="password"
-            id="senha"
-            v-model="password"
-            required
-            placeholder="Digite sua senha"
-          />
+          <label>Senha</label>
+          <input v-model="password" type="password" required />
         </div>
 
-        <button type="submit" :disabled="loading">
-          {{ loading ? "Entrando..." : "Entrar" }}
+        <button :disabled="loading" type="submit">
+          {{ loading ? 'Entrando...' : 'Entrar' }}
         </button>
 
+        <div class="forgot-password">
+          <router-link to="/forgot-password">Esqueci minha senha</router-link>
+        </div>
+
         <p class="error" v-if="error">{{ error }}</p>
-        <router-link to="/recuperar-senha" class="forgot">
-          Esqueci minha senha
-        </router-link>
       </form>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import api from '../api/api.js';
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/api/api'
 
-const email = ref('');
-const password = ref('');
-const error = ref('');
-const loading = ref(false);
-const router = useRouter();
+const email = ref('')
+const password = ref('')
+const error = ref('')
+const loading = ref(false)
+const router = useRouter()
 
 const handleLogin = async () => {
-  loading.value = true;
-  error.value = '';
+  loading.value = true
+  error.value = ''
 
   try {
-    const response = await api.post("/auth/login", {
+    const res = await api.post('/auth/login', {
       email: email.value,
-      password: password.value,
-    });
+      password: password.value
+    })
 
-    const { token } = response.data;
+    const token = res.data.token
+    // Decodifica o payload do JWT para obter perfil e escolaId
+    const payload = JSON.parse(atob(token.split('.')[1]))
 
-    if (!token) {
-      error.value = "Token não recebido do servidor.";
-      loading.value = false;
-      return;
-    }
-
-    // Decodifica o payload do JWT para extrair as informações do usuário
-    const payload = JSON.parse(atob(token.split(".")[1]));
-
-    // Limpa o localStorage antes de salvar novos dados
-    localStorage.clear();
-
-    // Armazena as informações no localStorage
-    localStorage.setItem("token", token);
-    localStorage.setItem("role", payload.perfil);
+    // 1. Limpa resíduos e salva novos dados
+    localStorage.clear()
+    localStorage.setItem('token', token)
+    localStorage.setItem('role', payload.perfil)
     
-    // 👇 AJUSTE CRÍTICO: SALVANDO O ESCOLA ID DE DENTRO DO TOKEN 👇
     if (payload.escolaId) {
-      localStorage.setItem("escolaId", payload.escolaId);
+      localStorage.setItem('escolaId', payload.escolaId)
     }
 
-    // Redireciona conforme o perfil do usuário
-    if (payload.perfil === "SUPER_ADMIN") {
-      router.push("/super");
-    } else if (payload.perfil === "ADMIN_ESCOLA") {
-      router.push("/escola");
+    // 🚀 AÇÃO CRÍTICA PARA OS GRÁFICOS:
+    // Injeta o token diretamente na instância ativa do axios para a primeira requisição do Dashboard
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+
+    // 2. Redirecionamento seguro baseado no perfil
+    if (payload.perfil === 'SUPER_ADMIN') {
+      router.push('/super')
     } else {
-      error.value = "Perfil não autorizado para acesso.";
+      router.push('/escola')
     }
 
   } catch (err) {
-    console.error("Erro no login:", err);
-    if (err.response?.data?.error) {
-      error.value = err.response.data.error;
-    } else {
-      error.value = "E-mail ou senha incorretos. Tente novamente.";
-    }
+    console.error('Erro no login:', err)
+    error.value = err.response?.data?.error || 'Credenciais inválidas.'
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 </script>
 
 <style scoped>
-/* Seu CSS aqui, sem alterações */
-.login-page { display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #181529; font-family: 'Poppins', sans-serif; }
-.login-box { background: #2c2c3e; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); width: 350px; text-align: center; }
-h1 { font-family: 'Great Vibes', cursive; color: #ff3c78; margin-bottom: 1.5rem; font-size: 28px; }
-.form-group { text-align: left; margin-bottom: 1rem; }
-label { font-size: 14px; color: #fff; }
-input { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #555; border-radius: 8px; outline: none; background-color: #1f1f1f; color: #fff; }
-input:focus { border-color: #ff3c78; }
-button { width: 100%; padding: 12px; background-color: #ff3c78; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; margin-top: 10px; transition: 0.3s; }
-button:hover:not(:disabled) { background-color: #e83266; }
-button:disabled { background-color: #ff7eb3; cursor: not-allowed; }
-.error { margin-top: 10px; color: #ff6b81; font-size: 14px; }
-.forgot { display: block; margin-top: 15px; font-size: 14px; color: #ff3c78; text-decoration: none; }
+.login-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #181529;
+}
+.login-box {
+  background: #2c2c3e;
+  padding: 2.5rem;
+  border-radius: 12px;
+  width: 350px;
+  text-align: center;
+}
+h1 { color: #ff3c78; margin-bottom: 1.5rem; }
+.form-group {
+  text-align: left;
+  margin-bottom: 1rem;
+}
+label { color: #fff; display: block; margin-bottom: 5px; }
+input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 5px;
+  border-radius: 8px;
+  border: 1px solid #444;
+  background: #fff;
+}
+button {
+  width: 100%;
+  margin-top: 15px;
+  padding: 12px;
+  background: #ff3c78;
+  color: white;
+  border-radius: 8px;
+  border: none;
+  font-weight: bold;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Estilo do link Esqueci minha senha */
+.forgot-password {
+  margin-top: 1rem;
+}
+.forgot-password a {
+  color: #bbb;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.forgot-password a:hover {
+  color: #ff3c78;
+}
+
+.error {
+  margin-top: 10px;
+  color: #ff6b81;
+}
 </style>

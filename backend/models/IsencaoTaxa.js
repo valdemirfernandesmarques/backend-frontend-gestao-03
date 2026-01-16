@@ -1,40 +1,47 @@
-// models/IsencaoTaxa.js
 module.exports = (sequelize, DataTypes) => {
-  const IsencaoTaxa = sequelize.define("IsencaoTaxa", {
-    id: {
-      type: DataTypes.INTEGER,
-      autoIncrement: true,
-      primaryKey: true
+  const IsencaoTaxa = sequelize.define(
+    'IsencaoTaxa',
+    {
+      escolaId: {
+        type: DataTypes.INTEGER,
+        allowNull: true, // null = todas as escolas
+      },
+      tipoTaxa: {
+        type: DataTypes.ENUM('PLATAFORMA'),
+        allowNull: false,
+        defaultValue: 'PLATAFORMA',
+      },
+      dataInicio: {
+        type: DataTypes.DATEONLY,
+        allowNull: false,
+      },
+      dataFim: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+      ativo: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true,
+      },
+      motivo: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      criadoPor: {
+        type: DataTypes.INTEGER,
+        allowNull: false, // id do SUPER_ADMIN
+      },
     },
-    escolaId: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'escolas', // Referência corrigida para o nome da tabela
-        key: 'id'
-      }
-    },
-    motivo: {
-      type: DataTypes.STRING(255),
-      allowNull: false
-    },
-    dataInicio: {
-      type: DataTypes.DATE,
-      allowNull: false
-    },
-    dataFim: {
-      type: DataTypes.DATE,
-      allowNull: false
+    {
+      tableName: 'isencoes_taxa',
+      timestamps: true,
     }
-  }, {
-    tableName: "isencoes_taxa",
-    timestamps: true
-  });
+  );
 
   IsencaoTaxa.associate = (models) => {
     IsencaoTaxa.belongsTo(models.Escola, {
       foreignKey: 'escolaId',
-      as: 'escola'
+      as: 'escola',
     });
   };
 

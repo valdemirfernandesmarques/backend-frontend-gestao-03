@@ -4,32 +4,20 @@ const router = express.Router();
 const financeiroController = require('../controllers/financeiroController');
 const authMiddleware = require('../middleware/authMiddleware');
 
-// 🔐 Todas as rotas do financeiro exigem autenticação
-router.use(authMiddleware);
+// ===============================
+// ROTAS FINANCEIRO
+// ===============================
 
-// ===============================
-// CAIXA / SALDO ATUAL
-// ===============================
-router.get('/caixa', financeiroController.caixa);
+// Listar lançamentos
+router.get('/', authMiddleware, financeiroController.listarLancamentos);
 
-// ===============================
-// FLUXO DE CAIXA
-// ===============================
-router.get('/fluxo', financeiroController.fluxoCaixa);
+// Resumo financeiro
+router.get('/resumo', authMiddleware, financeiroController.resumoFinanceiro);
 
-// ===============================
-// RECEITAS
-// ===============================
-router.get('/receitas', financeiroController.receitas);
+// Dashboard financeiro
+router.get('/dashboard', authMiddleware, financeiroController.dashboardFinanceiro);
 
-// ===============================
-// DESPESAS
-// ===============================
-router.get('/despesas', financeiroController.despesas);
-
-// ===============================
-// LUCRO
-// ===============================
-router.get('/lucro', financeiroController.lucro);
+// Fluxo financeiro (corrigido)
+router.get('/fluxo', authMiddleware, financeiroController.fluxoFinanceiro);
 
 module.exports = router;

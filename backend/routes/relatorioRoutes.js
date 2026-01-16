@@ -3,14 +3,33 @@ const express = require('express');
 const router = express.Router();
 
 const relatorioController = require('../controllers/relatorioController');
+const authMiddleware = require('../middleware/authMiddleware');
 
-// 🔥 ROTA PRINCIPAL (ESSA RESOLVE O 404 DO FRONT)
-router.get('/', relatorioController.getRelatorioFinanceiro);
+// ======================================
+// ROTAS DE RELATÓRIO (PROTEGIDAS)
+// ======================================
 
-// Relatórios específicos
-router.get('/mensalidades', relatorioController.relatorioMensalidades);
+// Relatório financeiro (mensalidades + vendas)
+// ADMIN_ESCOLA → apenas sua própria escola
+// SUPER_ADMIN → bloqueado no controller
+router.get(
+  '/',
+  authMiddleware,
+  relatorioController.getRelatorioFinanceiro
+);
 
-// Teste
-router.get('/teste', relatorioController.testeRelatorio);
+// Relatório somente de mensalidades
+router.get(
+  '/mensalidades',
+  authMiddleware,
+  relatorioController.relatorioMensalidades
+);
+
+// Rota de teste (protegida também)
+router.get(
+  '/teste',
+  authMiddleware,
+  relatorioController.testeRelatorio
+);
 
 module.exports = router;

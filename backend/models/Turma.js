@@ -21,7 +21,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.INTEGER,
       allowNull: true,
     },
-    // ✅ CORRIGIDO: Campo 'valor' removido para corresponder ao banco de dados
     escolaId: {
       type: DataTypes.INTEGER,
       allowNull: true,
@@ -35,14 +34,25 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     }
   }, {
-    tableName: 'turmas',
+    tableName: 'Turmas', // ✅ CORREÇÃO: padronizado com o nome real da tabela no banco
     timestamps: true,
   });
 
   Turma.associate = (models) => {
-    Turma.belongsTo(models.Escola, { foreignKey: 'escolaId', as: 'escola' });
-    Turma.belongsTo(models.Modalidade, { foreignKey: 'modalidadeId', as: 'modalidade' });
-    Turma.belongsTo(models.Professor, { foreignKey: 'professorId', as: 'professor' });
+    Turma.belongsTo(models.Escola, {
+      foreignKey: 'escolaId',
+      as: 'escola'
+    });
+
+    Turma.belongsTo(models.Modalidade, {
+      foreignKey: 'modalidadeId',
+      as: 'modalidade'
+    });
+
+    Turma.belongsTo(models.Professor, {
+      foreignKey: 'professorId',
+      as: 'professor'
+    });
   };
 
   return Turma;

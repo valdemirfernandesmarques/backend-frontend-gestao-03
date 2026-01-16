@@ -8,6 +8,9 @@ import SuperAdminLayout from '../layouts/SuperAdminLayout.vue'
 import Login from '../views/Login.vue'
 import RecuperarSenha from '../views/RecuperarSenha.vue'
 import ResetSenha from '../views/ResetSenha.vue'
+import FormAtivacao from '../views/FormAtivacao.vue'
+import TermosUso from '../views/TermosUso.vue'
+import PoliticaPrivacidade from '../views/PoliticaPrivacidade.vue'
 
 // Views ADMIN_ESCOLA
 import AdminEscolaDashboard from '../views/AdminEscolaDashboard.vue'
@@ -30,6 +33,7 @@ import Comissao from '../views/Comissao.vue'
 // Views SUPER_ADMIN
 import SuperAdminDashboard from '../views/SuperAdminDashboard.vue'
 import IsencaoTaxa from '../views/IsencaoTaxa.vue'
+import DashboardFinanceiro from '../views/DashboardFinanceiro.vue'
 
 // Auth Guard
 import { authGuard } from './authGuard.js'
@@ -40,6 +44,25 @@ const routes = [
   { path: '/login', name: 'Login', component: Login },
   { path: '/recuperar-senha', name: 'RecuperarSenha', component: RecuperarSenha },
   { path: '/reset-password/:token', name: 'ResetSenha', component: ResetSenha },
+
+  // 🔹 FORMULÁRIO DE ATIVAÇÃO
+  {
+    path: '/ativacao',
+    name: 'FormAtivacao',
+    component: FormAtivacao
+  },
+
+  // 🔹 TERMOS E PRIVACIDADE (PÚBLICOS)
+  {
+    path: '/termos',
+    name: 'TermosUso',
+    component: TermosUso
+  },
+  {
+    path: '/privacidade',
+    name: 'PoliticaPrivacidade',
+    component: PoliticaPrivacidade
+  },
 
   // 🔹 Rotas ADMIN_ESCOLA
   {
@@ -74,37 +97,18 @@ const routes = [
       const token = localStorage.getItem('token')
       const role = localStorage.getItem('role')
 
-      if (!token) {
-        return next('/login')
-      }
-
-      if (role !== 'SUPER_ADMIN') {
-        return next('/escola')
-      }
+      if (!token) return next('/login')
+      if (role !== 'SUPER_ADMIN') return next('/escola')
 
       return next()
     },
     children: [
       { path: '', redirect: '/super/dashboard' },
-
-      // ✅ Dashboard REAL do SUPER_ADMIN (KPIs, gráficos, ranking, etc)
-      {
-        path: 'dashboard',
-        name: 'SuperAdminDashboard',
-        component: SuperAdminDashboard
-      },
-
-      // ✅ Isenção de Taxa (exclusiva do SUPER_ADMIN)
-      {
-        path: 'isencao-taxa',
-        name: 'SuperAdminIsencaoTaxa',
-        component: IsencaoTaxa
-      },
-
+      { path: 'dashboard', name: 'SuperAdminDashboard', component: SuperAdminDashboard },
+      { path: 'isencao-taxa', name: 'SuperAdminIsencaoTaxa', component: IsencaoTaxa },
+      { path: 'financeiro', name: 'SuperAdminFinanceiro', component: DashboardFinanceiro },
       { path: 'alunos', name: 'SuperAdminAlunos', component: Alunos },
       { path: 'turmas', name: 'SuperAdminTurmas', component: Turma },
-      { path: 'financeiro', name: 'SuperAdminFinanceiro', component: Pagamentos },
-      { path: 'comunicacao', name: 'SuperAdminComunicacao', component: Venda },
       { path: 'relatorios', name: 'SuperAdminRelatorios', component: Relatorio }
     ]
   },

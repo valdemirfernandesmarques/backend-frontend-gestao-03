@@ -1,3 +1,4 @@
+// backend/server.js
 const express = require("express");
 const cors = require("cors");
 const db = require("./models");
@@ -6,16 +7,30 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ Middleware
+// ===============================
+// ✅ Middlewares Globais
+// ===============================
 app.use(cors());
 app.use(express.json()); // garante que o body seja processado corretamente
 
 // ✅ Servir arquivos estáticos da pasta uploads
 app.use("/uploads", express.static("uploads"));
 
-// ===== Rotas =====
+// ===============================
+// ===== Importação das Rotas =====
+// ===============================
+
+// Auth / Usuários
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+
+// 🔓 ATIVAÇÃO (rota pública)
+const ativacaoRoutes = require("./routes/ativacaoRoutes");
+
+// 🔐 RECUPERAÇÃO DE SENHA (rota pública)
+const recuperarSenhaRoutes = require("./routes/recuperarSenhaRoutes");
+
+// ADMIN_ESCOLA
 const escolaRoutes = require("./routes/escolaRoutes");
 const produtoRoutes = require("./routes/produtoRoutes");
 const vendaRoutes = require("./routes/vendaRoutes");
@@ -33,12 +48,28 @@ const comissaoRoutes = require("./routes/comissaoRoutes");
 const isencaoTaxaRoutes = require("./routes/isencaoTaxaRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
 
-// ✅ ROTA SUPER_ADMIN (ISOLADA)
-const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
+// 🔔 WEBHOOK (Gateway agnóstico — SEM authMiddleware)
+const webhookRoutes = require("./routes/webhookRoutes");
 
-// ===== Configurando rotas =====
+// 🚀 SUPER_ADMIN (ROTAS ISOLADAS)
+const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
+const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
+
+// ===============================
+// ===== Registro das Rotas =====
+// ===============================
+
+// 🔓 ATIVAÇÃO (pública)
+app.use("/api/ativacao", ativacaoRoutes);
+
+// 🔐 AUTH + RECUPERAÇÃO DE SENHA (públicas)
 app.use("/api/auth", authRoutes);
+app.use("/api/auth", recuperarSenhaRoutes);
+
+// Usuários
 app.use("/api/users", userRoutes);
+
+// ADMIN_ESCOLA
 app.use("/api/escolas", escolaRoutes);
 app.use("/api/produtos", produtoRoutes);
 app.use("/api/vendas", vendaRoutes);
@@ -56,10 +87,22 @@ app.use("/api/comissoes", comissaoRoutes);
 app.use("/api/isencao-taxa", isencaoTaxaRoutes);
 app.use("/api/financeiro", financeiroRoutes);
 
-// 🚀 SUPER_ADMIN (TOTALMENTE ISOLADO)
+// 🔔 WEBHOOK (não usa authMiddleware)
+app.use("/api/webhook", webhookRoutes);
+
+// 🚀 SUPER_ADMIN (TOTALMENTE ISOLADO DO ADMIN_ESCOLA)
 app.use("/api/super", superAdminDashboardRoutes);
 
-// ===== Função para criar Super Admin =====
+// 🚀 SUPER_ADMIN — FINANCEIRO DA PLATAFORMA
+// (Transações, taxas, isenções, gateway, split, etc.)
+app.use(
+  "/api/super/transacoes-financeiras",
+  transacoesFinanceirasRoutes
+);
+
+// ===============================
+// ===== Criação Automática do Super Admin =====
+// ===============================
 async function criarSuperAdmin() {
   try {
     const adminEmail = process.env.ADMIN_EMAIL;
@@ -70,9 +113,13 @@ async function criarSuperAdmin() {
       return;
     }
 
-    const existente = await db.User.findOne({ where: { email: adminEmail } });
+    const existente = await db.User.findOne({
+      where: { email: adminEmail },
+    });
+
     if (!existente) {
       const hash = await bcrypt.hash(adminPass, 10);
+
       await db.User.create({
         nome: "Super Admin",
         email: adminEmail,
@@ -80,6 +127,7 @@ async function criarSuperAdmin() {
         perfil: "SUPER_ADMIN",
         escolaId: null,
       });
+
       console.log(`✅ Super Admin criado: ${adminEmail}`);
     } else {
       console.log(`ℹ️ Super Admin já existe: ${adminEmail}`);
@@ -89,7 +137,9 @@ async function criarSuperAdmin() {
   }
 }
 
-// ===== Inicialização do servidor =====
+// ===============================
+// ===== Inicialização do Servidor =====
+// ===============================
 const PORT = process.env.PORT || 3000;
 
 if (db.sequelize) {
@@ -98,6 +148,7 @@ if (db.sequelize) {
     .then(async () => {
       console.log("🎯 Banco de dados sincronizado!");
       await criarSuperAdmin();
+
       app.listen(PORT, () =>
         console.log(`🚀 Servidor rodando na porta ${PORT}`)
       );

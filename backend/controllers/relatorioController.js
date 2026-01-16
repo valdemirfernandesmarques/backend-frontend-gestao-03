@@ -1,105 +1,134 @@
 // backend/controllers/relatorioController.js
-const {
-  Mensalidade,
-  Matricula,
-  Aluno,
-  Turma
-} = require('../models');
+const db = require("../models");
+const { Op } = require("sequelize");
 
-/**
- * =========================================
- * RELATÓRIO FINANCEIRO (ROTA PRINCIPAL)
- * GET /api/relatorios
- * =========================================
- */
-exports.getRelatorioFinanceiro = async (req, res) => {
-  try {
-    // 🔒 Para teste fixo (depois troca por req.user.escolaId)
-    const escolaId = 5;
+module.exports = {
+  // ===============================
+  // RELATÓRIO FINANCEIRO COMPLETO (PDF)
+  // ===============================
+  async getRelatorioFinanceiro(req, res) {
+    try {
+      const escolaId =
+        req.user.perfil === "ADMIN_ESCOLA" ? req.user.escolaId : null;
 
-    const mensalidades = await Mensalidade.findAll({
-      where: { escolaId },
-      include: [
-        {
-          model: Matricula,
-          as: 'matricula',
-          include: [
-            { model: Aluno, as: 'aluno' },
-            { model: Turma, as: 'turma' }
-          ]
-        }
-      ],
-      order: [['dataVencimento', 'ASC']]
-    });
+      if (!escolaId) {
+        // SUPER_ADMIN não pode acessar relatório de escolas
+        return res.status(403).json({
+          error: "Acesso negado para SUPER_ADMIN",
+        });
+      }
 
-    const dados = mensalidades.map(m => ({
-      id: m.id,
-      date: m.dataVencimento,
-      value: Number(m.valor) || 0,
-      type: 'Receita',
-      description: `Mensalidade - ${m.matricula?.aluno?.nome || 'Aluno não encontrado'}`,
-      entity: m.matricula?.aluno?.nome || 'Aluno não encontrado',
-      status: m.status
-    }));
+      // 🔹 BUSCA MENSALIDADES PAGAS
+      const mensalidades = await db.Mensalidade.findAll({
+        where: {
+          escolaId,
+          status: "PAGO",
+        },
+        include: [
+          {
+            model: db.Matricula,
+            as: "matricula",
+            include: [
+              {
+                model: db.Aluno,
+                as: "aluno",
+                attributes: ["nome"],
+              },
+            ],
+          },
+        ],
+      });
 
-    return res.json(dados);
+      // 🔹 BUSCA VENDAS / LANÇAMENTOS FINANCEIROS
+      const vendas = await db.LancamentoFinanceiro.findAll({
+        where: {
+          escolaId,
+          tipo: "ENTRADA",
+          origem: "VENDA", // garante que só pega vendas
+        },
+      });
 
-  } catch (error) {
-    console.error('❌ Erro no relatório financeiro:', error);
-    return res.status(500).json({
-      message: 'Erro ao carregar dados do relatório'
-    });
-  }
-};
+      // 🔹 FORMATANDO PARA O FRONT
+      const resultado = [];
 
-/**
- * =========================================
- * RELATÓRIO DE MENSALIDADES
- * GET /api/relatorios/mensalidades
- * =========================================
- */
-exports.relatorioMensalidades = async (req, res) => {
-  try {
-    const escolaId = 5;
+      // Adiciona mensalidades
+      mensalidades.forEach((m) => {
+        resultado.push({
+          date: m.updatedAt || m.createdAt,
+          type: "Receita",
+          description: `Mensalidade - ${m.matricula?.aluno?.nome || "—"}`,
+          entity: m.matricula?.aluno?.nome || "—",
+          value: Number(m.valor),
+        });
+      });
 
-    const mensalidades = await Mensalidade.findAll({
-      where: { escolaId },
-      include: [
-        {
-          model: Matricula,
-          as: 'matricula',
-          include: [
-            { model: Aluno, as: 'aluno' },
-            { model: Turma, as: 'turma' }
-          ]
-        }
-      ],
-      order: [['dataVencimento', 'ASC']]
-    });
+      // Adiciona vendas
+      vendas.forEach((v) => {
+        resultado.push({
+          date: v.data,
+          type: "Receita",
+          description: v.descricao || "Venda",
+          entity: v.entidade || "—",
+          value: Number(v.valor),
+        });
+      });
 
-    const data = mensalidades.map(m => ({
-      id: m.id,
-      dataVencimento: m.dataVencimento,
-      valor: Number(m.valor) || 0,
-      status: m.status,
-      aluno: m.matricula?.aluno?.nome || 'Aluno não encontrado',
-      turma: m.matricula?.turma?.nome || 'Turma não encontrada'
-    }));
+      // Ordena por data (mais recente primeiro)
+      resultado.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    return res.json(data);
+      return res.json(resultado);
+    } catch (error) {
+      console.error("Erro ao gerar relatório financeiro:", error);
+      return res.status(500).json({
+        error: "Erro ao gerar relatório financeiro",
+        details: error.message,
+      });
+    }
+  },
 
-  } catch (error) {
-    console.error('❌ Erro ao carregar mensalidades:', error);
-    return res.status(500).json({ message: 'Erro ao carregar mensalidades' });
-  }
-};
+  // ===============================
+  // RELATÓRIO DE MENSALIDADES (APENAS)
+  // ===============================
+  async relatorioMensalidades(req, res) {
+    try {
+      const escolaId =
+        req.user.perfil === "ADMIN_ESCOLA" ? req.user.escolaId : null;
 
-/**
- * =========================================
- * ROTA DE TESTE
- * GET /api/relatorios/teste
- * =========================================
- */
-exports.testeRelatorio = async (req, res) => {
-  return res.json({ message: 'Rota de teste funcionando!' });
+      if (!escolaId) {
+        return res.status(403).json({ error: "Acesso negado para SUPER_ADMIN" });
+      }
+
+      const mensalidades = await db.Mensalidade.findAll({
+        where: { escolaId },
+        include: [
+          {
+            model: db.Matricula,
+            as: "matricula",
+            include: [
+              {
+                model: db.Aluno,
+                as: "aluno",
+                attributes: ["nome"],
+              },
+            ],
+          },
+        ],
+      });
+
+      return res.json(mensalidades);
+    } catch (error) {
+      console.error("Erro ao gerar relatório de mensalidades:", error);
+      return res.status(500).json({
+        error: "Erro ao gerar relatório de mensalidades",
+        details: error.message,
+      });
+    }
+  },
+
+  // ===============================
+  // ROTA DE TESTE
+  // ===============================
+  async testeRelatorio(req, res) {
+    return res.json({ message: "Relatório funcionando!" });
+  },
 };

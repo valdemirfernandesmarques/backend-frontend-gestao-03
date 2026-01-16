@@ -1,18 +1,28 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/isencaoTaxaController');
+
+const isencaoTaxaController = require('../controllers/isencaoTaxaController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 // Criar isenção
-router.post('/', authMiddleware, controller.criarIsencao);
+router.post(
+  '/',
+  authMiddleware,
+  isencaoTaxaController.criarIsencao
+);
 
-// Listar isenções (opcional filtro por escola)
-router.get('/', authMiddleware, controller.listarIsencoes);
+// Listar isenções
+router.get(
+  '/',
+  authMiddleware,
+  isencaoTaxaController.listarIsencoes
+);
 
-// Atualizar isenção
-router.put('/:id', authMiddleware, controller.atualizarIsencao);
-
-// Remover isenção
-router.delete('/:id', authMiddleware, controller.removerIsencao);
+// Ativar / desativar
+router.put(
+  '/:id/status',
+  authMiddleware,
+  isencaoTaxaController.alterarStatus
+);
 
 module.exports = router;

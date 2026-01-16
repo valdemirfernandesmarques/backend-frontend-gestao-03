@@ -1,53 +1,196 @@
-// backend/controllers/authController.js
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const { User } = require("../models");
+// backend/controllers/alunoController.js
+const db = require("../models");
 
-// ================================
-// Controller de Autenticação
-// ================================
-
-// Login do usuário
-exports.login = async (req, res) => {
+/**
+ * ======================================================
+ * ➕ CRIAR ALUNO
+ * ADMIN_ESCOLA → cria SOMENTE na própria escola
+ * SUPER_ADMIN → pode criar informando escolaId
+ * ======================================================
+ */
+exports.criarAluno = async (req, res) => {
   try {
-    const { email, senha } = req.body;
+    const {
+      nome,
+      dataNascimento,
+      cpf,
+      email,
+      telefone,
+      endereco,
+      escolaId: escolaIdBody,
+    } = req.body;
 
-    // Verifica se os campos foram enviados
-    if (!email || !senha) {
-      return res.status(400).json({ error: "E-mail e senha são obrigatórios" });
+    if (!nome) {
+      return res.status(400).json({
+        error: "O campo nome é obrigatório.",
+      });
     }
 
-    // Procura usuário no banco
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(401).json({ error: "Usuário não encontrado" });
+    let escolaIdFinal = req.user.escolaId;
+
+    // SUPER_ADMIN pode informar escolaId manualmente
+    if (req.user.perfil === "SUPER_ADMIN") {
+      if (!escolaIdBody) {
+        return res.status(400).json({
+          error: "SUPER_ADMIN deve informar o escolaId.",
+        });
+      }
+      escolaIdFinal = escolaIdBody;
     }
 
-    // Valida senha com bcrypt
-    const senhaValida = await bcrypt.compare(senha, user.password);
-    if (!senhaValida) {
-      return res.status(401).json({ error: "Senha inválida" });
+    if (!escolaIdFinal) {
+      return res.status(400).json({
+        error: "Escola não identificada para o aluno.",
+      });
     }
 
-    // Gera token JWT
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        perfil: user.perfil,
-        escolaId: user.escolaId
-      },
-      process.env.JWT_SECRET || "segredo123", // ⚠️ Certifique-se de ter JWT_SECRET no .env
-      { expiresIn: "8h" }
-    );
+    const novoAluno = await db.Aluno.create({
+      nome,
+      dataNascimento,
+      cpf,
+      email,
+      telefone,
+      endereco,
+      escolaId: escolaIdFinal,
+    });
 
-    // Retorna resposta com token
-    res.json({
-      message: "Login realizado com sucesso",
-      token
+    return res.status(201).json({
+      message: "Aluno criado com sucesso!",
+      aluno: novoAluno,
     });
   } catch (error) {
-    console.error("❌ Erro no login:", error);
-    res.status(500).json({ error: "Erro interno no servidor" });
+    console.error("Erro ao criar aluno:", error);
+    return res.status(500).json({
+      error: "Erro interno ao criar aluno.",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * ======================================================
+ * 📋 LISTAR ALUNOS
+ * ADMIN_ESCOLA → somente da própria escola
+ * SUPER_ADMIN → todos
+ * ======================================================
+ */
+exports.listarAlunos = async (req, res) => {
+  try {
+    const where =
+      req.user.perfil === "SUPER_ADMIN"
+        ? {}
+        : { escolaId: req.user.escolaId };
+
+    const alunos = await db.Aluno.findAll({
+      where,
+      order: [["nome", "ASC"]],
+    });
+
+    return res.json(alunos);
+  } catch (error) {
+    console.error("Erro ao listar alunos:", error);
+    return res.status(500).json({
+      error: "Erro ao listar alunos.",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * ======================================================
+ * 🔍 BUSCAR ALUNO POR ID
+ * ======================================================
+ */
+exports.buscarAlunoPorId = async (req, res) => {
+  try {
+    const where =
+      req.user.perfil === "SUPER_ADMIN"
+        ? { id: req.params.id }
+        : { id: req.params.id, escolaId: req.user.escolaId };
+
+    const aluno = await db.Aluno.findOne({ where });
+
+    if (!aluno) {
+      return res.status(404).json({
+        error: "Aluno não encontrado.",
+      });
+    }
+
+    return res.json(aluno);
+  } catch (error) {
+    console.error("Erro ao buscar aluno:", error);
+    return res.status(500).json({
+      error: "Erro ao buscar aluno.",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * ======================================================
+ * ✏️ ATUALIZAR ALUNO
+ * ======================================================
+ */
+exports.atualizarAluno = async (req, res) => {
+  try {
+    const where =
+      req.user.perfil === "SUPER_ADMIN"
+        ? { id: req.params.id }
+        : { id: req.params.id, escolaId: req.user.escolaId };
+
+    const aluno = await db.Aluno.findOne({ where });
+
+    if (!aluno) {
+      return res.status(404).json({
+        error: "Aluno não encontrado.",
+      });
+    }
+
+    await aluno.update(req.body);
+
+    return res.json({
+      message: "Aluno atualizado com sucesso!",
+      aluno,
+    });
+  } catch (error) {
+    console.error("Erro ao atualizar aluno:", error);
+    return res.status(500).json({
+      error: "Erro ao atualizar aluno.",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * ======================================================
+ * 🗑️ DELETAR ALUNO
+ * ======================================================
+ */
+exports.deletarAluno = async (req, res) => {
+  try {
+    const where =
+      req.user.perfil === "SUPER_ADMIN"
+        ? { id: req.params.id }
+        : { id: req.params.id, escolaId: req.user.escolaId };
+
+    const aluno = await db.Aluno.findOne({ where });
+
+    if (!aluno) {
+      return res.status(404).json({
+        error: "Aluno não encontrado.",
+      });
+    }
+
+    await aluno.destroy();
+
+    return res.json({
+      message: "Aluno removido com sucesso!",
+    });
+  } catch (error) {
+    console.error("Erro ao deletar aluno:", error);
+    return res.status(500).json({
+      error: "Erro ao deletar aluno.",
+      details: error.message,
+    });
   }
 };

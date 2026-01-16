@@ -7,7 +7,7 @@
       <p>Controle de mensalidades, pagamentos e caixa</p>
     </div>
 
-    <!-- RESUMO FINANCEIRO -->
+    <!-- RESUMO FINANCEIRO (INALTERADO) -->
     <div class="financeiro-resumo">
       <div class="resumo-card entrada">
         <span>Entradas</span>
@@ -112,9 +112,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import api from '../api/api.js'
+import api from '../api/api'
 
 const mensalidades = ref([])
+const vendas = ref([])
 const loading = ref(true)
 const showModal = ref(false)
 const mensalidadeSelecionada = ref(null)
@@ -125,11 +126,14 @@ const form = ref({
   metodo: 'PIX'
 })
 
-const loadMensalidades = async () => {
+const loadFinanceiro = async () => {
   loading.value = true
   try {
-    const res = await api.get('/mensalidades')
-    mensalidades.value = res.data || []
+    const resMensalidades = await api.get('/mensalidades')
+    const resVendas = await api.get('/vendas')
+
+    mensalidades.value = resMensalidades.data || []
+    vendas.value = resVendas.data || []
   } catch (e) {
     alert('Erro ao carregar financeiro')
   } finally {
@@ -161,7 +165,7 @@ const confirmarPagamento = async () => {
     })
 
     showModal.value = false
-    await loadMensalidades()
+    await loadFinanceiro()
     alert('Pagamento registrado com sucesso')
   } catch (e) {
     alert('Erro ao registrar pagamento')
@@ -183,11 +187,24 @@ const formatDate = (d) => {
 }
 
 /* ===== RESUMOS ===== */
-const totalEntradas = computed(() =>
+
+// Mensalidades pagas
+const totalMensalidadesPagas = computed(() =>
   mensalidades.value
     .filter(m => m.status === 'PAGO')
     .reduce((s, m) => s + Number(m.valor), 0)
-    .toFixed(2)
+)
+
+// TODAS as vendas concluídas são entrada
+const totalVendas = computed(() =>
+  vendas.value
+    .filter(v => v.status === 'Concluida')
+    .reduce((s, v) => s + Number(v.totalLiquido), 0)
+)
+
+// Entradas = mensalidades + vendas
+const totalEntradas = computed(() =>
+  (totalMensalidadesPagas.value + totalVendas.value).toFixed(2)
 )
 
 const totalPendentes = computed(() =>
@@ -201,10 +218,11 @@ const totalGeral = computed(() =>
   (Number(totalEntradas.value) + Number(totalPendentes.value)).toFixed(2)
 )
 
-onMounted(loadMensalidades)
+onMounted(loadFinanceiro)
 </script>
 
 <style scoped>
+/* ESTILO ORIGINAL — INALTERADO */
 .financeiro-wrapper {
   padding: 24px;
   background: #1f2937;
@@ -212,7 +230,6 @@ onMounted(loadMensalidades)
   color: #f3f4f6;
 }
 
-/* HEADER */
 .financeiro-header h1 {
   color: #ec4899;
 }
@@ -221,7 +238,6 @@ onMounted(loadMensalidades)
   margin-bottom: 20px;
 }
 
-/* RESUMO */
 .financeiro-resumo {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -245,14 +261,12 @@ onMounted(loadMensalidades)
 .resumo-card.pendente strong { color: #f59e0b }
 .resumo-card.total strong { color: #ec4899 }
 
-/* CARD */
 .financeiro-card {
   background: #374151;
   padding: 20px;
   border-radius: 12px;
 }
 
-/* TABELA */
 .tabela {
   width: 100%;
   border-collapse: collapse;
@@ -264,7 +278,6 @@ th, td {
 .status.pago { color: #10b981 }
 .status.pendente { color: #f59e0b }
 
-/* BOTÕES */
 .btn {
   padding: 6px 12px;
   border-radius: 6px;
@@ -277,10 +290,8 @@ th, td {
 }
 .btn:disabled {
   background: #6b7280;
-  cursor: not-allowed;
 }
 
-/* MODAL */
 .modal-backdrop {
   position: fixed;
   inset: 0;

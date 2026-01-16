@@ -1,150 +1,186 @@
-const { LancamentoFinanceiro } = require('../models');
+// backend/controllers/financeiroController.js
+const db = require('../models');
 const { Op } = require('sequelize');
 
-// 🔒 Bloqueio absoluto para SUPER_ADMIN
-const validarAcessoFinanceiro = (req) => {
-  if (req.user.perfil !== 'ADMIN_ESCOLA') {
-    throw new Error('Acesso negado ao módulo financeiro');
-  }
-};
-
 // ===============================
-// CAIXA / SALDO ATUAL
+// LISTAR LANÇAMENTOS
 // ===============================
-exports.caixa = async (req, res) => {
+exports.listarLancamentos = async (req, res) => {
   try {
-    validarAcessoFinanceiro(req);
+    const { dataInicio, dataFim, tipo, origem, escolaId: escolaIdQuery } = req.query;
 
-    const escolaId = req.user.escolaId;
+    const escolaId =
+      req.user.perfil === 'SUPER_ADMIN'
+        ? escolaIdQuery
+        : req.user.escolaId;
 
-    const entradas = await LancamentoFinanceiro.sum('valor', {
-      where: { escolaId, tipo: 'ENTRADA' }
-    });
-
-    const saidas = await LancamentoFinanceiro.sum('valor', {
-      where: { escolaId, tipo: 'SAIDA' }
-    });
-
-    const saldo = (entradas || 0) - (saidas || 0);
-
-    res.json({
-      entradas: entradas || 0,
-      saidas: saidas || 0,
-      saldo
-    });
-  } catch (error) {
-    res.status(403).json({
-      error: error.message
-    });
-  }
-};
-
-// ===============================
-// FLUXO DE CAIXA
-// ===============================
-exports.fluxoCaixa = async (req, res) => {
-  try {
-    validarAcessoFinanceiro(req);
-
-    const escolaId = req.user.escolaId;
-    const { dataInicio, dataFim } = req.query;
+    if (!escolaId) {
+      return res.status(400).json({ error: 'escolaId é obrigatório.' });
+    }
 
     const where = { escolaId };
 
+    if (tipo) where.tipo = tipo;
+    if (origem) where.origem = origem;
+
     if (dataInicio && dataFim) {
-      where.data = {
-        [Op.between]: [dataInicio, dataFim]
-      };
+      where.data = { [Op.between]: [dataInicio, dataFim] };
     }
 
-    const lancamentos = await LancamentoFinanceiro.findAll({
+    const lancamentos = await db.LancamentoFinanceiro.findAll({
       where,
       order: [['data', 'ASC']]
     });
 
     res.json(lancamentos);
   } catch (error) {
-    res.status(403).json({
-      error: error.message
+    res.status(500).json({
+      error: 'Erro ao listar lançamentos',
+      details: error.message
     });
   }
 };
 
 // ===============================
-// RECEITAS
+// RESUMO FINANCEIRO (SALDO)
 // ===============================
-exports.receitas = async (req, res) => {
+exports.resumoFinanceiro = async (req, res) => {
   try {
-    validarAcessoFinanceiro(req);
+    const { dataInicio, dataFim, escolaId: escolaIdQuery } = req.query;
 
-    const escolaId = req.user.escolaId;
+    const escolaId =
+      req.user.perfil === 'SUPER_ADMIN'
+        ? escolaIdQuery
+        : req.user.escolaId;
 
-    const receitas = await LancamentoFinanceiro.findAll({
-      where: {
-        escolaId,
-        tipo: 'ENTRADA'
-      },
-      order: [['data', 'DESC']]
-    });
+    if (!escolaId) {
+      return res.status(400).json({ error: 'escolaId é obrigatório.' });
+    }
 
-    res.json(receitas);
-  } catch (error) {
-    res.status(403).json({
-      error: error.message
-    });
-  }
-};
+    const where = { escolaId };
 
-// ===============================
-// DESPESAS
-// ===============================
-exports.despesas = async (req, res) => {
-  try {
-    validarAcessoFinanceiro(req);
+    if (dataInicio && dataFim) {
+      where.data = { [Op.between]: [dataInicio, dataFim] };
+    }
 
-    const escolaId = req.user.escolaId;
+    const lancamentos = await db.LancamentoFinanceiro.findAll({ where });
 
-    const despesas = await LancamentoFinanceiro.findAll({
-      where: {
-        escolaId,
-        tipo: 'SAIDA'
-      },
-      order: [['data', 'DESC']]
-    });
+    let entradas = 0;
+    let saidas = 0;
 
-    res.json(despesas);
-  } catch (error) {
-    res.status(403).json({
-      error: error.message
-    });
-  }
-};
-
-// ===============================
-// LUCRO
-// ===============================
-exports.lucro = async (req, res) => {
-  try {
-    validarAcessoFinanceiro(req);
-
-    const escolaId = req.user.escolaId;
-
-    const entradas = await LancamentoFinanceiro.sum('valor', {
-      where: { escolaId, tipo: 'ENTRADA' }
-    });
-
-    const saidas = await LancamentoFinanceiro.sum('valor', {
-      where: { escolaId, tipo: 'SAIDA' }
-    });
-
-    const lucro = (entradas || 0) - (saidas || 0);
+    for (const l of lancamentos) {
+      if (l.tipo === 'ENTRADA') entradas += Number(l.valor);
+      if (l.tipo === 'SAIDA') saidas += Number(l.valor);
+    }
 
     res.json({
-      lucro
+      totalEntradas: Number(entradas.toFixed(2)),
+      totalSaidas: Number(saidas.toFixed(2)),
+      saldo: Number((entradas - saidas).toFixed(2))
     });
+
   } catch (error) {
-    res.status(403).json({
-      error: error.message
+    res.status(500).json({
+      error: 'Erro no resumo financeiro',
+      details: error.message
+    });
+  }
+};
+
+// ===============================
+// DASHBOARD FINANCEIRO
+// ===============================
+exports.dashboardFinanceiro = async (req, res) => {
+  try {
+    const { dataInicio, dataFim, escolaId: escolaIdQuery } = req.query;
+
+    const escolaId =
+      req.user.perfil === 'SUPER_ADMIN'
+        ? escolaIdQuery
+        : req.user.escolaId;
+
+    if (!escolaId) {
+      return res.status(400).json({ error: 'escolaId é obrigatório.' });
+    }
+
+    const where = { escolaId };
+
+    if (dataInicio && dataFim) {
+      where.data = { [Op.between]: [dataInicio, dataFim] };
+    }
+
+    const lancamentos = await db.LancamentoFinanceiro.findAll({ where });
+
+    let totalEntradas = 0;
+    let totalSaidas = 0;
+    let entradasPorOrigem = {};
+
+    for (const l of lancamentos) {
+      const valor = Number(l.valor);
+
+      if (l.tipo === 'ENTRADA') {
+        totalEntradas += valor;
+        entradasPorOrigem[l.origem] =
+          (entradasPorOrigem[l.origem] || 0) + valor;
+      }
+
+      if (l.tipo === 'SAIDA') {
+        totalSaidas += valor;
+      }
+    }
+
+    res.json({
+      cards: {
+        entradas: Number(totalEntradas.toFixed(2)),
+        saidas: Number(totalSaidas.toFixed(2)),
+        saldo: Number((totalEntradas - totalSaidas).toFixed(2))
+      },
+      entradasPorOrigem: Object.keys(entradasPorOrigem).map(origem => ({
+        origem,
+        total: Number(entradasPorOrigem[origem].toFixed(2))
+      }))
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      error: 'Erro ao gerar dashboard financeiro',
+      details: error.message
+    });
+  }
+};
+
+// ===============================
+// FLUXO FINANCEIRO (USADO NO DASHBOARD)
+// ===============================
+exports.fluxoFinanceiro = async (req, res) => {
+  try {
+    const { dataInicio, dataFim, escolaId: escolaIdQuery } = req.query;
+
+    const escolaId =
+      req.user.perfil === 'SUPER_ADMIN'
+        ? escolaIdQuery
+        : req.user.escolaId;
+
+    if (!escolaId) {
+      return res.status(400).json({ error: 'escolaId é obrigatório.' });
+    }
+
+    const where = { escolaId };
+
+    if (dataInicio && dataFim) {
+      where.data = { [Op.between]: [dataInicio, dataFim] };
+    }
+
+    const lancamentos = await db.LancamentoFinanceiro.findAll({
+      where,
+      order: [['data', 'ASC']]
+    });
+
+    res.json(lancamentos);
+  } catch (error) {
+    res.status(500).json({
+      error: 'Erro ao buscar fluxo financeiro',
+      details: error.message
     });
   }
 };
