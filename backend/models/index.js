@@ -30,10 +30,13 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 // ===============================
-// CARREGAMENTO DOS MODELS
+// MODELS
 // ===============================
 db.Escola = require("./Escola")(sequelize, DataTypes);
 db.User = require("./User")(sequelize, DataTypes);
+
+// 🔐 RECUPERAÇÃO DE SENHA (ESTAVA FALTANDO)
+db.PasswordResetToken = require("./PasswordResetToken")(sequelize, DataTypes);
 
 db.Aluno = require("./Aluno")(sequelize, DataTypes);
 db.Professor = require("./Professor")(sequelize, DataTypes);
@@ -47,37 +50,24 @@ db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
 
 db.Pagamento = require("./Pagamento")(sequelize, DataTypes);
 
-// ===============================
-// FINANCEIRO ADMIN_ESCOLA
-// ===============================
+// FINANCEIRO
 db.LancamentoFinanceiro = require("./LancamentoFinanceiro")(sequelize, DataTypes);
-
 db.Comissao = require("./Comissao")(sequelize, DataTypes);
 
-// ===============================
 // VENDAS
-// ===============================
 db.Produto = require("./Produto")(sequelize, DataTypes);
 db.Venda = require("./Venda")(sequelize, DataTypes);
 db.VendaItem = require("./VendaItem")(sequelize, DataTypes);
 
-// ===============================
-// RELACIONAMENTOS
-// ===============================
+// RELAÇÕES
 db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
 
-// ===============================
-// ISENÇÃO DE TAXA (SUPER_ADMIN)
-// ===============================
+// SUPER_ADMIN
 db.IsencaoTaxa = require("./IsencaoTaxa")(sequelize, DataTypes);
-
-// ===============================
-// FINANCEIRO SUPER_ADMIN (PLATAFORMA)
-// ===============================
 db.TransacaoFinanceira = require("./TransacaoFinanceira")(sequelize, DataTypes);
 
 // ===============================
-// EXECUÇÃO DAS ASSOCIAÇÕES
+// ASSOCIAÇÕES
 // ===============================
 Object.keys(db).forEach((modelName) => {
   if (db[modelName] && db[modelName].associate) {
@@ -85,7 +75,4 @@ Object.keys(db).forEach((modelName) => {
   }
 });
 
-// ===============================
-// EXPORT
-// ===============================
 module.exports = db;

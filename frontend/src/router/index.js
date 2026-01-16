@@ -42,8 +42,25 @@ const routes = [
   // 🔹 Rotas Públicas
   { path: '/', redirect: '/login' },
   { path: '/login', name: 'Login', component: Login },
-  { path: '/recuperar-senha', name: 'RecuperarSenha', component: RecuperarSenha },
-  { path: '/reset-password/:token', name: 'ResetSenha', component: ResetSenha },
+
+  // 🔐 Recuperação de senha (rota principal)
+  {
+    path: '/recuperar-senha',
+    name: 'RecuperarSenha',
+    component: RecuperarSenha
+  },
+
+  // 🔐 Alias para compatibilidade com Login.vue
+  {
+    path: '/forgot-password',
+    redirect: '/recuperar-senha'
+  },
+
+  {
+    path: '/reset-password/:token',
+    name: 'ResetSenha',
+    component: ResetSenha
+  },
 
   // 🔹 FORMULÁRIO DE ATIVAÇÃO
   {
@@ -52,7 +69,7 @@ const routes = [
     component: FormAtivacao
   },
 
-  // 🔹 TERMOS E PRIVACIDADE (PÚBLICOS)
+  // 🔹 TERMOS E PRIVACIDADE
   {
     path: '/termos',
     name: 'TermosUso',

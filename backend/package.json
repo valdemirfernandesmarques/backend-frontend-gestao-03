@@ -27,6 +27,7 @@
     "jwt-decode": "^4.0.0",
     "multer": "^2.0.2",
     "mysql2": "^3.9.7",
+    "nodemailer": "^7.0.12",
     "pdfkit": "^0.17.2",
     "sequelize": "^6.37.3"
   },

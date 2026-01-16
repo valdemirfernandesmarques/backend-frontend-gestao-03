@@ -2,12 +2,19 @@
   <div class="recuperar-senha-page">
     <div class="recuperar-box">
       <h1>Recuperar Senha</h1>
-      <p>Informe o seu e-mail para receber um link de redefinição de senha.</p>
+      <p>
+        Informe o seu e-mail para receber um link de redefinição de senha.
+      </p>
 
       <form @submit.prevent="enviarEmail">
         <div class="form-group">
           <label for="email">E-mail</label>
-          <input type="email" id="email" v-model="email" required />
+          <input
+            type="email"
+            id="email"
+            v-model="email"
+            required
+          />
         </div>
 
         <button type="submit" :disabled="loading">
@@ -21,37 +28,35 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref } from 'vue'
-import axios from 'axios'
+import api from '@/api/api' // ✅ USAR A INSTÂNCIA PADRÃO DO PROJETO
 
-export default {
-  name: 'RecuperarSenha',
-  setup() {
-    const email = ref('')
-    const error = ref('')
-    const success = ref('')
-    const loading = ref(false)
+const email = ref('')
+const error = ref('')
+const success = ref('')
+const loading = ref(false)
 
-    async function enviarEmail() {
-      error.value = ''
-      success.value = ''
-      loading.value = true
+const enviarEmail = async () => {
+  error.value = ''
+  success.value = ''
+  loading.value = true
 
-      try {
-        const response = await axios.post('http://localhost:3000/api/auth/recuperar-senha', {
-          email: email.value
-        })
+  try {
+    const response = await api.post('/auth/forgot-password', {
+      email: email.value
+    })
 
-        success.value = response.data.message
-      } catch (err) {
-        error.value = err.response?.data?.error || 'Erro ao enviar e-mail.'
-      } finally {
-        loading.value = false
-      }
-    }
-
-    return { email, error, success, loading, enviarEmail }
+    success.value =
+      response.data.message ||
+      'Se o e-mail existir, você receberá instruções para redefinir a senha.'
+  } catch (err) {
+    console.error('Erro recuperação senha:', err)
+    error.value =
+      err.response?.data?.error ||
+      'Erro ao solicitar recuperação de senha.'
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -62,14 +67,14 @@ export default {
   align-items: center;
   justify-content: center;
   height: 100vh;
-  background: #f0f2f5;
+  background: #181529;
 }
 
 .recuperar-box {
-  background: white;
+  background: #2c2c3e;
   padding: 30px;
   border-radius: 12px;
-  box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
   width: 350px;
   text-align: center;
 }
@@ -77,12 +82,12 @@ export default {
 h1 {
   font-size: 20px;
   margin-bottom: 10px;
-  color: #333;
+  color: #ff3c78;
 }
 
 p {
   font-size: 14px;
-  color: #555;
+  color: #ddd;
 }
 
 .form-group {
@@ -92,14 +97,14 @@ p {
 
 label {
   font-size: 14px;
-  color: #555;
+  color: #fff;
 }
 
 input {
   width: 100%;
   padding: 10px;
   margin-top: 5px;
-  border: 1px solid #ddd;
+  border: 1px solid #444;
   border-radius: 8px;
   outline: none;
 }
@@ -107,7 +112,7 @@ input {
 button {
   width: 100%;
   padding: 12px;
-  background-color: dodgerblue;
+  background-color: #ff3c78;
   color: white;
   border: none;
   border-radius: 8px;
@@ -117,21 +122,17 @@ button {
 }
 
 button:disabled {
-  background-color: #7aaee8;
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-button:hover:not(:disabled) {
-  background-color: #1a75d1;
-}
-
 .success {
-  color: green;
+  color: #2ecc71;
   margin-top: 10px;
 }
 
 .error {
-  color: red;
+  color: #ff6b81;
   margin-top: 10px;
 }
 </style>

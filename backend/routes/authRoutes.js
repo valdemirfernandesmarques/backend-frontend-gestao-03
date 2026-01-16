@@ -1,17 +1,27 @@
 // backend/routes/authRoutes.js
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const authController = require('../controllers/authController');
+const authController = require("../controllers/authController");
 
-// ================================
-// Rotas de autenticação
-// ================================
+/**
+ * ================================
+ * 🔐 AUTENTICAÇÃO
+ * ================================
+ */
 
-// Login do usuário
-router.post('/login', authController.login);
+// Login
+router.post("/login", authController.login);
 
-// Recuperar senha
-router.post('/forgot-password', authController.forgotPassword);
-router.post('/reset-password/:token', authController.resetPassword);
+/**
+ * ================================
+ * 🔐 RECUPERAÇÃO DE SENHA (PÚBLICO)
+ * ================================
+ */
+
+// Solicitar recuperação
+router.post("/forgot-password", authController.forgotPassword);
+
+// Resetar senha com token
+router.post("/reset-password/:token", authController.resetPassword);
 
 module.exports = router;

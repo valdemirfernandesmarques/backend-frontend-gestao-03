@@ -1,56 +1,76 @@
-<!-- frontend/src/views/ResetSenha.vue -->
 <template>
   <div class="reset-senha-page">
-    <div class="reset-senha-box">
+    <div class="reset-box">
       <h1>Redefinir Senha</h1>
-      <p>Informe a nova senha para sua conta.</p>
 
-      <form @submit.prevent="resetarSenha">
+      <p v-if="!sucesso">
+        Informe sua nova senha abaixo.
+      </p>
+
+      <form v-if="!sucesso" @submit.prevent="resetarSenha">
         <div class="form-group">
-          <label for="password">Nova Senha</label>
-          <input type="password" id="password" v-model="password" required />
+          <label for="password">Nova senha</label>
+          <input
+            id="password"
+            type="password"
+            v-model="password"
+            required
+            minlength="6"
+          />
         </div>
 
         <div class="form-group">
-          <label for="confirmPassword">Confirmar Senha</label>
-          <input type="password" id="confirmPassword" v-model="confirmPassword" required />
+          <label for="confirmPassword">Confirmar nova senha</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            v-model="confirmPassword"
+            required
+            minlength="6"
+          />
         </div>
 
         <button type="submit" :disabled="loading">
-          {{ loading ? 'Alterando...' : 'Alterar Senha' }}
+          {{ loading ? 'Salvando...' : 'Alterar senha' }}
         </button>
       </form>
 
-      <p v-if="success" class="success">{{ success }}</p>
       <p v-if="error" class="error">{{ error }}</p>
 
-      <router-link to="/login" class="back-login">
-        Voltar para o login
-      </router-link>
+      <div v-if="sucesso" class="success">
+        <p>✅ Senha alterada com sucesso!</p>
+        <router-link to="/login">Voltar para o login</router-link>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 import { ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
-import { useRoute } from 'vue-router'
 
 export default {
   name: 'ResetSenha',
   setup() {
+    const route = useRoute()
+    const router = useRouter()
+
+    const token = route.params.token
+
     const password = ref('')
     const confirmPassword = ref('')
     const loading = ref(false)
-    const success = ref('')
     const error = ref('')
-
-    const route = useRoute()
-    const token = route.params.token // token vindo do link
+    const sucesso = ref(false)
 
     async function resetarSenha() {
       error.value = ''
-      success.value = ''
+
+      if (password.value.length < 6) {
+        error.value = 'A senha deve ter no mínimo 6 caracteres.'
+        return
+      }
 
       if (password.value !== confirmPassword.value) {
         error.value = 'As senhas não coincidem.'
@@ -60,19 +80,34 @@ export default {
       loading.value = true
 
       try {
-        const response = await axios.post(
-          `http://localhost:3000/auth/reset-password/${token}`,
+        await axios.post(
+          `http://localhost:3000/api/auth/reset-password/${token}`,
           { password: password.value }
         )
-        success.value = response.data.message
+
+        sucesso.value = true
+
+        // redirecionamento opcional automático
+        setTimeout(() => {
+          router.push('/login')
+        }, 3000)
       } catch (err) {
-        error.value = err.response?.data?.error || 'Erro ao redefinir senha.'
+        error.value =
+          err.response?.data?.error ||
+          'Token inválido ou expirado.'
       } finally {
         loading.value = false
       }
     }
 
-    return { password, confirmPassword, loading, success, error, resetarSenha }
+    return {
+      password,
+      confirmPassword,
+      loading,
+      error,
+      sucesso,
+      resetarSenha
+    }
   }
 }
 </script>
@@ -86,17 +121,16 @@ export default {
   background: #f0f2f5;
 }
 
-.reset-senha-box {
+.reset-box {
   background: white;
   padding: 30px;
   border-radius: 12px;
-  box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
-  width: 350px;
+  width: 360px;
   text-align: center;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
 
 h1 {
-  font-size: 20px;
   margin-bottom: 10px;
   color: #333;
 }
@@ -111,13 +145,18 @@ p {
   margin-bottom: 15px;
 }
 
+label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 5px;
+  color: #444;
+}
+
 input {
   width: 100%;
   padding: 10px;
-  margin-top: 5px;
-  border: 1px solid #ddd;
   border-radius: 8px;
-  outline: none;
+  border: 1px solid #ddd;
 }
 
 button {
@@ -128,34 +167,28 @@ button {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  margin-top: 10px;
   font-size: 16px;
 }
 
 button:disabled {
-  background-color: #7aaee8;
+  background-color: #8bb6f0;
   cursor: not-allowed;
 }
 
-button:hover:not(:disabled) {
-  background-color: #1a75d1;
+.success {
+  margin-top: 15px;
+  color: green;
 }
 
-.success {
-  color: green;
+.success a {
+  display: inline-block;
   margin-top: 10px;
+  color: dodgerblue;
+  text-decoration: none;
 }
 
 .error {
-  color: red;
   margin-top: 10px;
-}
-
-.back-login {
-  display: block;
-  margin-top: 15px;
-  font-size: 14px;
-  color: #1a75d1;
-  text-decoration: none;
+  color: red;
 }
 </style>
