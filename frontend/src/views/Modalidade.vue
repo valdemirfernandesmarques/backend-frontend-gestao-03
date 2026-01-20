@@ -108,14 +108,12 @@ const closeModal = () => {
 
 const submitForm = async () => {
   try {
-    // Pega o ID da escola que foi salvo no localStorage durante o login
     const escolaId = localStorage.getItem('escolaId');
     if (!escolaId) {
       alert('Erro: Identificação da escola não encontrada. Por favor, faça o login novamente.');
       return;
     }
 
-    // Adiciona o escolaId aos dados que serão enviados para o backend
     const payload = { ...form.value, escolaId: parseInt(escolaId) };
 
     if (editMode.value) {
@@ -127,7 +125,6 @@ const submitForm = async () => {
     closeModal();
   } catch (err) {
     console.error('Erro ao salvar modalidade:', err);
-    // Exibe a mensagem de erro específica vinda do backend, se houver
     const errorMessage = err.response?.data?.error || 'Erro ao salvar modalidade.';
     alert(errorMessage);
   }
@@ -148,22 +145,170 @@ onMounted(loadData);
 </script>
 
 <style scoped>
-/* Seus estilos aqui... */
-.modalidade-page { background-color: #1f1c3a; padding: 2rem; border-radius: 12px; }
-.modalidade-page h1 { color: #f0f0f0; margin-bottom: 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
-.top-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
-.top-actions button { padding: 0.8rem 1.5rem; background-color: #e45da9; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; }
-.top-actions button:hover { background-color: #ff7eb3; transform: translateY(-2px); }
-.form-container { padding: 10px; }
-.form-container h2 { text-align: center; color: #e45da9; font-weight: 600; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-.full-width-field { grid-column: 1 / -1; }
-label { font-weight: 600; color: #c799df; margin-bottom: 8px; display: block; font-size: 0.9rem; }
-input, select, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #3e3e5b; background-color: #181529; color: #f0f0f0; outline: none; font-size: 1rem; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; }
-input:focus, select:focus, textarea:focus { border-color: #e45da9; box-shadow: 0 0 8px rgba(228, 93, 169, 0.3); }
-.button-group { display: flex; justify-content: flex-end; gap: 15px; margin-top: 2.5rem; border-top: 1px solid #3e3e5b; padding-top: 1.5rem; }
-.button-group button { flex-grow: 0; padding: 12px 30px; border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; font-size: 1rem; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center; gap: 8px; }
-.btn-principal { background-color: #e45da9; }
-.btn-secundario { background-color: #3e3e5b; }
-.button-group button:hover { opacity: 0.9; transform: translateY(-2px); }
+/* ===== Layout Base ===== */
+.modalidade-page {
+  background-color: #1f1c3a;
+  padding: 2rem;
+  border-radius: 12px;
+}
+
+.modalidade-page h1 {
+  color: #f0f0f0;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.top-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.top-actions button {
+  padding: 0.8rem 1.5rem;
+  background-color: #e45da9;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-actions button:hover {
+  background-color: #ff7eb3;
+  transform: translateY(-2px);
+}
+
+/* ===== Formulário ===== */
+.form-container {
+  padding: 10px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.full-width-field {
+  grid-column: 1 / -1;
+}
+
+label {
+  font-weight: 600;
+  color: #c799df;
+  margin-bottom: 8px;
+  display: block;
+  font-size: 0.9rem;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #3e3e5b;
+  background-color: #181529;
+  color: #f0f0f0;
+  outline: none;
+  font-size: 1rem;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.3s ease;
+}
+
+input:focus,
+textarea:focus {
+  border-color: #e45da9;
+  box-shadow: 0 0 8px rgba(228, 93, 169, 0.3);
+}
+
+/* ===== Botões ===== */
+.button-group {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  margin-top: 2.5rem;
+  border-top: 1px solid #3e3e5b;
+  padding-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.button-group button {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-principal {
+  background-color: #e45da9;
+}
+
+.btn-secundario {
+  background-color: #3e3e5b;
+}
+
+.button-group button:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+/* ===== Tablet ===== */
+@media (max-width: 1024px) {
+  .modalidade-page {
+    padding: 1.5rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .top-actions {
+    justify-content: center;
+  }
+}
+
+/* ===== Celular ===== */
+@media (max-width: 600px) {
+  .modalidade-page {
+    padding: 1rem;
+  }
+
+  .modalidade-page h1 {
+    font-size: 1.2rem;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .top-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .button-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .button-group button {
+    width: 100%;
+  }
+}
 </style>

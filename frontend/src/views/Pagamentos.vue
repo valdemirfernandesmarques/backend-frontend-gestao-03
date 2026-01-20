@@ -188,21 +188,18 @@ const formatDate = (d) => {
 
 /* ===== RESUMOS ===== */
 
-// Mensalidades pagas
 const totalMensalidadesPagas = computed(() =>
   mensalidades.value
     .filter(m => m.status === 'PAGO')
     .reduce((s, m) => s + Number(m.valor), 0)
 )
 
-// TODAS as vendas concluídas são entrada
 const totalVendas = computed(() =>
   vendas.value
     .filter(v => v.status === 'Concluida')
     .reduce((s, v) => s + Number(v.totalLiquido), 0)
 )
 
-// Entradas = mensalidades + vendas
 const totalEntradas = computed(() =>
   (totalMensalidadesPagas.value + totalVendas.value).toFixed(2)
 )
@@ -222,7 +219,7 @@ onMounted(loadFinanceiro)
 </script>
 
 <style scoped>
-/* ESTILO ORIGINAL — INALTERADO */
+/* ===== ESTILO BASE (INALTERADO) ===== */
 .financeiro-wrapper {
   padding: 24px;
   background: #1f2937;
@@ -341,5 +338,55 @@ input, select {
 .btn-sec {
   background: #374151;
   color: #fff;
+}
+
+/* ===== TABLET ===== */
+@media (max-width: 1024px) {
+  .financeiro-resumo {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .modal {
+    width: 90%;
+  }
+}
+
+/* ===== CELULAR ===== */
+@media (max-width: 600px) {
+  .financeiro-wrapper {
+    padding: 16px;
+  }
+
+  .financeiro-resumo {
+    grid-template-columns: 1fr;
+  }
+
+  .tabela thead {
+    display: none;
+  }
+
+  .tabela tr {
+    display: flex;
+    flex-direction: column;
+    border-bottom: 1px solid #4b5563;
+    padding: 10px 0;
+  }
+
+  .tabela td {
+    border: none;
+    padding: 6px 0;
+  }
+
+  .acoes {
+    flex-direction: column;
+  }
+
+  .acoes button {
+    width: 100%;
+  }
+
+  .modal {
+    width: 95%;
+  }
 }
 </style>

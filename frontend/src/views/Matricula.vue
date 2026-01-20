@@ -386,19 +386,22 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* APLICAÇÃO DA COR #131129 E RESPONSIVIDADE */
 .matricula-page {
   padding: 20px;
-  background: #f8f9fa;
+  background-color: #131129; /* Cor de fundo principal solicitada */
   min-height: 100vh;
+  color: #ffffff;
 }
 
 .matricula-page h1 {
-  color: #2d3748;
+  color: #e45da9; /* Rosa de destaque do sistema */
   margin-bottom: 1.5rem;
   font-weight: 600;
   display: flex;
   align-items: center;
   gap: 10px;
+  font-size: 1.5rem;
 }
 
 .top-actions {
@@ -408,13 +411,12 @@ onMounted(() => {
 }
 
 .btn-new {
-  padding: 12px 24px;
-  background: #9f7aea;
+  padding: 10px 20px;
+  background: #e45da9;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 1rem;
   font-weight: 600;
   transition: all 0.2s ease;
   display: flex;
@@ -423,18 +425,17 @@ onMounted(() => {
 }
 
 .btn-new:hover {
-  background: #805ad5;
+  background: #c34b8e;
   transform: translateY(-1px);
 }
 
 .form-container {
-  padding: 20px;
+  padding: 10px;
 }
 
 .form-container h2 {
   text-align: center;
-  color: #2d3748;
-  font-weight: 600;
+  color: #ffffff;
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
@@ -444,7 +445,7 @@ onMounted(() => {
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsividade automática */
   gap: 20px;
   margin-bottom: 20px;
 }
@@ -455,8 +456,8 @@ onMounted(() => {
 }
 
 label {
-  font-weight: 600;
-  color: #4a5568;
+  font-weight: 500;
+  color: #a0aec0; /* Cor de texto secundária do print */
   margin-bottom: 8px;
   font-size: 0.9rem;
 }
@@ -464,18 +465,17 @@ label {
 input, select {
   width: 100%;
   padding: 12px;
-  border-radius: 6px;
-  border: 1px solid #cbd5e0;
-  background: white;
-  color: #2d3748;
+  border-radius: 8px;
+  border: 1px solid #3b3b4f;
+  background: #1f1c3a; /* Cor de fundo dos inputs/cards do print */
+  color: #ffffff;
   outline: none;
-  font-size: 1rem;
   transition: all 0.3s ease;
 }
 
 input:focus, select:focus {
-  border-color: #9f7aea;
-  box-shadow: 0 0 0 3px rgba(159, 122, 234, 0.1);
+  border-color: #e45da9;
+  box-shadow: 0 0 0 2px rgba(228, 93, 169, 0.2);
 }
 
 .button-group {
@@ -484,17 +484,16 @@ input:focus, select:focus {
   gap: 15px;
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid #3b3b4f;
 }
 
 .button-group button {
-  padding: 12px 30px;
+  padding: 10px 25px;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   color: white;
   font-weight: 600;
   cursor: pointer;
-  font-size: 1rem;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
@@ -504,44 +503,40 @@ input:focus, select:focus {
 }
 
 .btn-principal {
-  background: #9f7aea;
-}
-
-.btn-principal:hover:not(:disabled) {
-  background: #805ad5;
-}
-
-.btn-principal:disabled {
-  background: #a0aec0;
-  cursor: not-allowed;
+  background: #e45da9;
 }
 
 .btn-secundario {
-  background: #718096;
-}
-
-.btn-secundario:hover {
-  background: #4a5568;
+  background: #3b3b4f;
 }
 
 .loading {
   text-align: center;
   padding: 40px;
-  color: #4a5568;
-  font-style: italic;
+  color: #a0aec0;
 }
 
-.error-message {
-  padding: 15px;
-  margin: 20px 0;
-  background: #fed7d7;
-  color: #c53030;
-  border-radius: 8px;
-  font-weight: bold;
-  text-align: center;
+/* MEDIA QUERIES PARA RESPONSIVIDADE TOTAL */
+@media (max-width: 1024px) {
+  .matricula-page {
+    padding: 15px;
+  }
 }
 
 @media (max-width: 768px) {
+  .matricula-page h1 {
+    font-size: 1.2rem;
+  }
+
+  .top-actions {
+    justify-content: center;
+  }
+
+  .btn-new {
+    width: 100%;
+    justify-content: center;
+  }
+
   .form-grid {
     grid-template-columns: 1fr;
   }
@@ -552,6 +547,12 @@ input:focus, select:focus {
   
   .button-group button {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .matricula-page {
+    padding: 10px;
   }
 }
 </style>

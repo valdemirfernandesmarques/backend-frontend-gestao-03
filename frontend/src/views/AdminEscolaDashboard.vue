@@ -17,20 +17,24 @@
     </div>
 
     <div class="filters">
-      <input v-model="inicio" @input="mascaraData('inicio')" placeholder="DD/MM/AAAA" maxlength="10" />
-      <input v-model="fim" @input="mascaraData('fim')" placeholder="DD/MM/AAAA" maxlength="10" />
-      <button @click="filtrar">Filtrar</button>
-      <button @click="exportarPDF">Exportar PDF</button>
-      <button @click="exportarExcel">Exportar Excel</button>
+      <div class="date-group">
+        <input v-model="inicio" @input="mascaraData('inicio')" placeholder="DD/MM/AAAA" maxlength="10" />
+        <input v-model="fim" @input="mascaraData('fim')" placeholder="DD/MM/AAAA" maxlength="10" />
+      </div>
+      <div class="button-group">
+        <button @click="filtrar" class="btn-filter">Filtrar</button>
+        <button @click="exportarPDF">PDF</button>
+        <button @click="exportarExcel">Excel</button>
+      </div>
     </div>
 
     <div class="grid">
-      <div class="card"><h3>Pedidos de Matrícula Pendentes</h3><canvas ref="g1"></canvas></div>
-      <div class="card"><h3>Matrículas Mensais</h3><canvas ref="g2"></canvas></div>
-      <div class="card"><h3>Receita Total por Semana</h3><canvas ref="g3"></canvas></div>
-      <div class="card"><h3>Receita Total por Mês</h3><canvas ref="g4"></canvas></div>
-      <div class="card"><h3>Receita Total por Ano</h3><canvas ref="g5"></canvas></div>
-      <div class="card"><h3>Receita Anual (Comparativo)</h3><canvas ref="g6"></canvas></div>
+      <div class="card"><h3>Pedidos de Matrícula Pendentes</h3><div class="chart-container"><canvas ref="g1"></canvas></div></div>
+      <div class="card"><h3>Matrículas Mensais</h3><div class="chart-container"><canvas ref="g2"></canvas></div></div>
+      <div class="card"><h3>Receita Total por Semana</h3><div class="chart-container"><canvas ref="g3"></canvas></div></div>
+      <div class="card"><h3>Receita Total por Mês</h3><div class="chart-container"><canvas ref="g4"></canvas></div></div>
+      <div class="card"><h3>Receita Total por Ano</h3><div class="chart-container"><canvas ref="g5"></canvas></div></div>
+      <div class="card"><h3>Receita Anual (Comparativo)</h3><div class="chart-container"><canvas ref="g6"></canvas></div></div>
     </div>
 
   </div>
@@ -41,7 +45,7 @@ import { ref, onMounted } from 'vue'
 import Chart from 'chart.js/auto'
 import api from '../api/api'
 import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable' // <-- Adicionado para o relatório em tabela
+import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 
 const g1 = ref(), g2 = ref(), g3 = ref(), g4 = ref(), g5 = ref(), g6 = ref()
@@ -134,6 +138,7 @@ function calcularKPIs() {
 function baseOptions(prefix = '') {
   return {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { labels: { color: '#fff' }},
       tooltip: {
@@ -173,7 +178,11 @@ function montarGraficos() {
         backgroundColor: ['crimson', 'limegreen']
       }]
     },
-    options: { responsive: true, plugins: { legend: { labels: { color: '#fff' } } } }
+    options: { 
+        responsive: true, 
+        maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#fff' } } } 
+    }
   }))
 
   /* 2 - Matrículas Mensais */
@@ -262,18 +271,12 @@ function gerarComparativo() {
   }))
 }
 
-/* =======================
-   CORREÇÃO: EXPORTAÇÃO PDF (RELATÓRIO DE DADOS)
-======================= */
 function exportarPDF() {
   const pdf = new jsPDF('p', 'mm', 'a4')
-  
-  // Título e Estilo
   pdf.setFontSize(18)
-  pdf.setTextColor(20, 27, 90) // Cor azul escura do seu tema
+  pdf.setTextColor(20, 27, 90)
   pdf.text('Relatório Financeiro Detalhado', 14, 20)
   
-  // Informações de Resumo (KPIs)
   pdf.setFontSize(11)
   pdf.setTextColor(0, 0, 0)
   pdf.text(`Data de Geração: ${new Date().toLocaleDateString('pt-BR')}`, 14, 30)
@@ -284,7 +287,6 @@ function exportarPDF() {
   pdf.text(`Alunos Ativos: ${kpis.value.alunosAtivos}`, 14, 50)
   pdf.text(`Inadimplência detectada: ${kpis.value.inadimplentes}`, 14, 55)
 
-  // Tabela de Dados Financeiros
   autoTable(pdf, {
     startY: 65,
     head: [['Data', 'Descrição / Aluno', 'Valor (R$)']],
@@ -293,7 +295,7 @@ function exportarPDF() {
       f.descricao || 'Pagamento de Mensalidade',
       `R$ ${Number(f.valor).toFixed(2)}`
     ]),
-    headStyles: { fillColor: [31, 42, 122] }, // Azul do cabeçalho
+    headStyles: { fillColor: [31, 42, 122] },
     theme: 'striped',
     styles: { fontSize: 10 }
   })
@@ -301,9 +303,6 @@ function exportarPDF() {
   pdf.save(`relatorio_financeiro_${new Date().getTime()}.pdf`)
 }
 
-/* =======================
-   EXPORTAÇÃO EXCEL
-======================= */
 function exportarExcel() {
   const wb = XLSX.utils.book_new()
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(financeiro.value), 'Financeiro')
@@ -331,36 +330,74 @@ onMounted(async () => {
   padding: 20px;
   color: #fff;
 }
+
+/* KPIs */
 .kpis {
   display: flex;
   gap: 20px;
   margin-bottom: 20px;
+  flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
 }
 .kpi {
   background: #141b5a;
   flex: 1;
+  min-width: 200px; /* Garante que não fiquem muito estreitos */
   padding: 20px;
   border-radius: 12px;
   text-align: center;
 }
+.kpi strong {
+  display: block;
+  font-size: 1.4rem;
+  margin-top: 5px;
+  color: #4ade80;
+}
+
+/* Filtros */
 .filters {
   display: flex;
-  gap: 10px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
   margin-bottom: 20px;
+  flex-wrap: wrap;
 }
-.filters input, .filters button {
-  padding: 8px;
+.date-group {
+  display: flex;
+  gap: 10px;
+  flex: 1;
+}
+.date-group input {
+  flex: 1;
+  padding: 10px;
   border-radius: 6px;
   border: none;
+  background: #141b5a;
+  color: #fff;
+  min-width: 120px;
+}
+.button-group {
+  display: flex;
+  gap: 8px;
 }
 .filters button {
+  padding: 10px 15px;
+  border-radius: 6px;
+  border: none;
   background: #1f2a7a;
   color: #fff;
   cursor: pointer;
+  font-weight: bold;
+  white-space: nowrap;
+}
+.filters button.btn-filter {
+  background: #ff3c78;
 }
 .filters button:hover {
-  background: #2a3bb1;
+  opacity: 0.8;
 }
+
+/* Grid de Gráficos */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -370,8 +407,28 @@ onMounted(async () => {
   background: #141b5a;
   padding: 20px;
   border-radius: 12px;
+  display: flex;
+  flex-direction: column;
 }
 .card h3 {
-  margin-bottom: 10px;
+  margin-bottom: 15px;
+  font-size: 1rem;
+  color: #a5b4fc;
+}
+.chart-container {
+  position: relative;
+  height: 250px; /* Altura fixa para manter consistência */
+  width: 100%;
+}
+
+/* Responsividade adicional para celulares pequenos */
+@media (max-width: 600px) {
+  .dashboard { padding: 10px; }
+  .kpis { gap: 10px; }
+  .kpi { padding: 15px; }
+  .date-group { width: 100%; }
+  .button-group { width: 100%; justify-content: space-between; }
+  .button-group button { flex: 1; }
+  .grid { grid-template-columns: 1fr; }
 }
 </style>

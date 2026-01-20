@@ -3,31 +3,33 @@
     <h1>Gerenciar Alunos</h1>
 
     <div class="top-actions">
-      <button @click="openModal()">Adicionar Aluno</button>
+      <button @click="openModal()" class="btn-add">Adicionar Aluno</button>
     </div>
 
-    <p v-if="loading">Carregando alunos...</p>
+    <p v-if="loading" class="status-msg">Carregando alunos...</p>
     
     <div v-if="error" class="error-message">
       <p>{{ error }}</p>
       <button @click="loadAlunos">Tentar Novamente</button>
     </div>
 
-    <Table 
-      v-if="!loading && !error"
-      :data="alunos" 
-      :columns="columns"
-      :actions="['edit', 'delete']"
-      @edit="openModal" 
-      @delete="deleteAluno" 
-    />
+    <div class="table-responsive">
+      <Table 
+        v-if="!loading && !error"
+        :data="alunos" 
+        :columns="columns"
+        :actions="['edit', 'delete']"
+        @edit="openModal" 
+        @delete="deleteAluno" 
+      />
+    </div>
 
     <Modal :show="isModalOpen" @close="closeModal">
       <template #header>
         <h2>{{ editMode ? 'Editar Aluno' : 'Novo Aluno' }}</h2>
       </template>
 
-      <form @submit.prevent="submitForm">
+      <form @submit.prevent="submitForm" class="responsive-form">
         <fieldset>
           <legend>1. Informações Pessoais</legend>
           <div class="form-row">
@@ -37,7 +39,13 @@
             </div>
             <div class="form-group">
               <label for="dataNascimento">Data de Nascimento:</label>
-              <input id="dataNascimento" type="date" v-model="form.dataNascimento" required />
+              <input 
+                id="dataNascimento" 
+                type="date" 
+                v-model="form.dataNascimento" 
+                max="9999-12-31"
+                required 
+              />
             </div>
           </div>
           <div class="form-row">
@@ -66,6 +74,7 @@
             </div>
           </div>
         </fieldset>
+
         <fieldset>
           <legend>2. Endereço</legend>
           <div class="form-row">
@@ -99,9 +108,10 @@
             </div>
           </div>
         </fieldset>
+
         <div class="form-buttons">
-          <button type="button" @click="closeModal">Cancelar</button>
-          <button type="submit">{{ editMode ? 'Atualizar Aluno' : 'Salvar Aluno' }}</button>
+          <button type="button" @click="closeModal" class="btn-cancel">Cancelar</button>
+          <button type="submit" class="btn-submit">{{ editMode ? 'Atualizar Aluno' : 'Salvar Aluno' }}</button>
         </div>
       </form>
     </Modal>
@@ -207,6 +217,184 @@ onMounted(loadAlunos);
 </script>
 
 <style scoped>
-.aluno-page{background-color:#1f1c3a;padding:2rem;border-radius:12px}.top-actions{display:flex;justify-content:flex-end;margin-bottom:1.5rem}.aluno-page h1{color:#f0f0f0;margin-bottom:1.5rem;font-weight:600}.top-actions button{padding:.8rem 1.5rem;background-color:#e45da9;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:1rem;font-weight:600;transition:background-color .2s ease}.top-actions button:hover{background-color:#ff7eb3}form{display:flex;flex-direction:column;gap:1.5rem}fieldset{border:1px solid #3e3e5b;padding:1.5rem;border-radius:8px}legend{color:#e45da9;font-weight:600;padding:0 .5rem;margin-left:.5rem}.form-row{display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem}.form-row:last-child{margin-bottom:0}.form-group{flex:1 1 45%;display:flex;flex-direction:column;min-width:200px}.form-group label{color:#c799df;margin-bottom:.5rem;font-size:.9rem}.form-group input,.form-group select{padding:.8rem;border:1px solid #3e3e5b;background-color:#181529;color:#f0f0f0;border-radius:5px;font-size:1rem}.form-group input:focus,.form-group select:focus{outline:none;border-color:#e45da9}.form-group input:read-only{background-color:#2a2a3f;cursor:not-allowed}.cep-group{flex-grow:.5}.rua-group{flex-grow:1.5}.form-buttons{display:flex;justify-content:flex-end;gap:1rem;margin-top:1.5rem;border-top:1px solid #3e3e5b;padding-top:1.5rem}.form-buttons button{padding:.8rem 1.5rem;border:none;border-radius:8px;cursor:pointer;font-size:1rem;font-weight:600;transition:all .2s ease}.form-buttons button[type=submit]{background-color:#e45da9;color:#fff}.form-buttons button[type=submit]:hover{background-color:#ff7eb3}.form-buttons button[type=button]{background-color:#3e3e5b;color:#c799df}.form-buttons button[type=button]:hover{background-color:#555377}
-.error-message{background-color:rgba(255,77,77,.1);border:1px solid #ff4d4d;color:#ff4d4d;padding:1.5rem;border-radius:8px;text-align:center}.error-message button{margin-top:1rem}
+.aluno-page {
+  background-color: #1f1c3a;
+  padding: 2rem;
+  border-radius: 12px;
+  min-height: 100vh;
+}
+
+.top-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+
+.aluno-page h1 {
+  color: #f0f0f0;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.btn-add {
+  padding: .8rem 1.5rem;
+  background-color: #e45da9;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color .2s ease;
+}
+
+.btn-add:hover {
+  background-color: #ff7eb3;
+}
+
+/* Container para rolagem horizontal em mobile */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+/* Formulário Responsivo */
+.responsive-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+fieldset {
+  border: 1px solid #3e3e5b;
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+legend {
+  color: #e45da9;
+  font-weight: 600;
+  padding: 0 .5rem;
+  margin-left: .5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  color: #c799df;
+  margin-bottom: .5rem;
+  font-size: .9rem;
+}
+
+.form-group input,
+.form-group select {
+  padding: .8rem;
+  border: 1px solid #3e3e5b;
+  background-color: #181529;
+  color: #f0f0f0;
+  border-radius: 5px;
+  font-size: 1rem;
+  width: 100%;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #e45da9;
+}
+
+.form-group input:read-only {
+  background-color: #2a2a3f;
+  cursor: not-allowed;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid #3e3e5b;
+  padding-top: 1.5rem;
+}
+
+.form-buttons button {
+  padding: .8rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  transition: all .2s ease;
+}
+
+.btn-submit {
+  background-color: #e45da9;
+  color: #fff;
+}
+
+.btn-submit:hover {
+  background-color: #ff7eb3;
+}
+
+.btn-cancel {
+  background-color: #3e3e5b;
+  color: #c799df;
+}
+
+.btn-cancel:hover {
+  background-color: #555377;
+}
+
+.error-message {
+  background-color: rgba(255, 77, 77, .1);
+  border: 1px solid #ff4d4d;
+  color: #ff4d4d;
+  padding: 1.5rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.status-msg {
+  color: #c799df;
+  text-align: center;
+}
+
+/* Media Queries para Responsividade */
+@media (max-width: 768px) {
+  .aluno-page {
+    padding: 1rem;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr; /* Coluna única no mobile */
+    gap: 1rem;
+  }
+
+  .form-buttons {
+    flex-direction: column;
+  }
+
+  .form-buttons button {
+    width: 100%;
+  }
+
+  .top-actions {
+    justify-content: center;
+  }
+
+  .top-actions button {
+    width: 100%;
+  }
+}
 </style>

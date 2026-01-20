@@ -37,21 +37,27 @@
       <!-- RECEITA POR SERVIÇO -->
       <div class="card">
         <h2>RECEITA MENSAL POR SERVIÇO</h2>
-        <canvas ref="servicoChart"></canvas>
+        <div class="chart-container">
+          <canvas ref="servicoChart"></canvas>
+        </div>
         <span>Ganho mensal por serviço, conforme a taxa de 1,3%</span>
       </div>
 
       <!-- RECEITA TOTAL BARRAS -->
       <div class="card">
         <h2>RECEITA TOTAL POR MÊS</h2>
-        <canvas ref="barrasChart"></canvas>
+        <div class="chart-container">
+          <canvas ref="barrasChart"></canvas>
+        </div>
         <span>Ganho total mensal conforme a taxa de 1,3%</span>
       </div>
 
       <!-- RECEITA TOTAL LINHA -->
       <div class="card">
         <h2>RECEITA TOTAL POR MÊS</h2>
-        <canvas ref="linhaChart"></canvas>
+        <div class="chart-container">
+          <canvas ref="linhaChart"></canvas>
+        </div>
       </div>
     </main>
   </div>
@@ -84,9 +90,6 @@ export default {
       headers: { Authorization: `Bearer ${token}` }
     });
 
-    // ===============================
-    // 🔢 Animação de números
-    // ===============================
     const animateNumber = (refVar, target) => {
       let current = 0;
       const step = Math.max(1, Math.ceil(target / 50));
@@ -101,12 +104,8 @@ export default {
       }, 20);
     };
 
-    // ===============================
-    // 📊 Charts
-    // ===============================
     const createGauge = (value) => {
       if (gaugeInstance) gaugeInstance.destroy();
-
       gaugeInstance = new Chart(gaugeChart.value, {
         type: "doughnut",
         data: {
@@ -128,7 +127,6 @@ export default {
 
     const createServicoChart = (receitas) => {
       if (servicoInstance) servicoInstance.destroy();
-
       servicoInstance = new Chart(servicoChart.value, {
         type: "bar",
         data: {
@@ -150,14 +148,15 @@ export default {
         },
         options: {
           animation: { duration: 2000 },
-          plugins: { legend: { display: false } }
+          plugins: { legend: { display: false } },
+          responsive: true,
+          maintainAspectRatio: false
         }
       });
     };
 
     const createBarrasChart = (meses, valores) => {
       if (barrasInstance) barrasInstance.destroy();
-
       barrasInstance = new Chart(barrasChart.value, {
         type: "bar",
         data: {
@@ -169,14 +168,15 @@ export default {
         },
         options: {
           animation: { duration: 2000 },
-          plugins: { legend: { display: false } }
+          plugins: { legend: { display: false } },
+          responsive: true,
+          maintainAspectRatio: false
         }
       });
     };
 
     const createLinhaChart = (meses, valores) => {
       if (linhaInstance) linhaInstance.destroy();
-
       linhaInstance = new Chart(linhaChart.value, {
         type: "line",
         data: {
@@ -191,14 +191,13 @@ export default {
         },
         options: {
           animation: { duration: 2000 },
-          plugins: { legend: { display: false } }
+          plugins: { legend: { display: false } },
+          responsive: true,
+          maintainAspectRatio: false
         }
       });
     };
 
-    // ===============================
-    // 🔌 Carregar dados reais
-    // ===============================
     const carregarDashboard = async () => {
       const uso = await api.get("/uso");
       const downloadsRes = await api.get("/downloads");
@@ -216,9 +215,6 @@ export default {
       createLinhaChart(mensalRes.data.meses, mensalRes.data.receitasLinha);
     };
 
-    // ===============================
-    // 🌗 Tema
-    // ===============================
     const toggleTheme = () => {
       document.body.classList.toggle("light");
       isLight.value = document.body.classList.contains("light");
@@ -274,6 +270,11 @@ export default {
   text-align: center;
 }
 
+.chart-container {
+  width: 100%;
+  height: 260px;
+}
+
 h2, .number {
   color: #fff;
 }
@@ -318,11 +319,38 @@ body.light .gauge-text {
   color: #222;
 }
 
+/* TABLET */
 @media (max-width: 1200px) {
-  .dashboard { grid-template-columns: repeat(2, 1fr); }
+  .dashboard {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
+/* MOBILE */
 @media (max-width: 768px) {
-  .dashboard { grid-template-columns: 1fr; }
+  .dashboard {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .toggle-btn {
+    position: static;
+    margin-top: 10px;
+  }
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .chart-container {
+    height: 220px;
+  }
+
+  .number {
+    font-size: 28px;
+  }
 }
 </style>

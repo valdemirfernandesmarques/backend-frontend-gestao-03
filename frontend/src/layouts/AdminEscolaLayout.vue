@@ -1,6 +1,12 @@
 <template>
   <div class="dashboard-container">
-    <nav class="sidebar">
+    <button class="mobile-menu-toggle" @click="toggleSidebar">
+      <i :class="isSidebarOpen ? 'fas fa-times' : 'fas fa-bars'"></i>
+    </button>
+
+    <div v-if="isSidebarOpen" class="sidebar-overlay" @click="closeSidebar"></div>
+
+    <nav class="sidebar" :class="{ 'sidebar-open': isSidebarOpen }">
       <div class="sidebar-header" @click="handleLogoClick">
         <div class="logo-upload-container">
           <img v-if="logoUrl" :src="logoUrl" alt="Logotipo da Escola" class="school-logo" />
@@ -18,58 +24,60 @@
 
       <ul class="menu">
         <li :class="{ active: $route.path === '/escola' }">
-          <router-link to="/escola"><i class="fas fa-tachometer-alt"></i> Dashboard</router-link>
+          <router-link to="/escola" @click="closeSidebar"><i class="fas fa-tachometer-alt"></i> Dashboard</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/alunos') }">
-          <router-link to="/escola/alunos"><i class="fas fa-users"></i> Alunos</router-link>
+          <router-link to="/escola/alunos" @click="closeSidebar"><i class="fas fa-users"></i> Alunos</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/turmas') }">
-          <router-link to="/escola/turmas"><i class="fas fa-calendar-alt"></i> Turmas e Agenda</router-link>
+          <router-link to="/escola/turmas" @click="closeSidebar"><i class="fas fa-calendar-alt"></i> Turmas e Agenda</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/matriculas') }">
-          <router-link to="/escola/matriculas"><i class="fas fa-user-plus"></i> Matrículas</router-link>
+          <router-link to="/escola/matriculas" @click="closeSidebar"><i class="fas fa-user-plus"></i> Matrículas</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/professores') }">
-          <router-link to="/escola/professores"><i class="fas fa-chalkboard-teacher"></i> Professores</router-link>
+          <router-link to="/escola/professores" @click="closeSidebar"><i class="fas fa-chalkboard-teacher"></i> Professores</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/funcionarios') }">
-          <router-link to="/escola/funcionarios"><i class="fas fa-users-cog"></i> Funcionários</router-link>
+          <router-link to="/escola/funcionarios" @click="closeSidebar"><i class="fas fa-users-cog"></i> Funcionários</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/modalidades') }">
-          <router-link to="/escola/modalidades"><i class="fas fa-palette"></i> Modalidades</router-link>
+          <router-link to="/escola/modalidades" @click="closeSidebar"><i class="fas fa-palette"></i> Modalidades</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/pagamentos') }">
-          <router-link to="/escola/pagamentos"><i class="fas fa-hand-holding-dollar"></i> Financeiro</router-link>
+          <router-link to="/escola/pagamentos" @click="closeSidebar"><i class="fas fa-hand-holding-dollar"></i> Financeiro</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/vendas') }">
-          <router-link to="/escola/vendas"><i class="fas fa-store"></i> Vendas</router-link>
+          <router-link to="/escola/vendas" @click="closeSidebar"><i class="fas fa-store"></i> Vendas</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/comissoes') }">
-          <router-link to="/escola/comissoes"><i class="fas fa-percentage"></i> Comissão</router-link>
+          <router-link to="/escola/comissoes" @click="closeSidebar"><i class="fas fa-percentage"></i> Comissão</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/mensalidades') }">
-          <router-link to="/escola/mensalidades"><i class="fas fa-calendar-check"></i> Mensalidade</router-link>
+          <router-link to="/escola/mensalidades" @click="closeSidebar"><i class="fas fa-calendar-check"></i> Mensalidade</router-link>
         </li>
         <li :class="{ active: $route.path.startsWith('/escola/relatorios') }">
-          <router-link to="/escola/relatorios"><i class="fas fa-chart-line"></i> Relatório</router-link>
+          <router-link to="/escola/relatorios" @click="closeSidebar"><i class="fas fa-chart-line"></i> Relatório</router-link>
         </li>
       </ul>
 
       <div class="sidebar-footer">
-        <router-link to="#"><i class="fas fa-cog"></i> Configurações</router-link>
+        <router-link to="#" @click="closeSidebar"><i class="fas fa-cog"></i> Configurações</router-link>
         <a href="#" @click.prevent="logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
       </div>
     </nav>
 
     <main class="main-content">
       <header class="main-header">
-        <h2>Seja bem-vinda, {{ userName }}!</h2>
+        <h2 class="welcome-text">Seja bem-vinda, {{ userName }}!</h2>
         <div class="user-profile">
           <img src="https://i.pravatar.cc/40" alt="Foto do Usuário" />
         </div>
       </header>
 
-      <router-view></router-view>
+      <div class="page-content">
+        <router-view></router-view>
+      </div>
     </main>
   </div>
 </template>
@@ -85,9 +93,17 @@ const router = useRouter()
 const userName = ref('Ana')
 const logoUrl = ref(null)
 const logoFileInput = ref(null)
+const isSidebarOpen = ref(false)
 
-/* ✅ CORREÇÃO ÚNICA E NECESSÁRIA */
 const escolaId = ref(localStorage.getItem('escolaId'))
+
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+
+const closeSidebar = () => {
+  isSidebarOpen.value = false
+}
 
 const logout = () => {
   localStorage.removeItem('token')
@@ -99,7 +115,6 @@ const logout = () => {
 const carregarLogo = async () => {
   try {
     if (!escolaId.value) return
-
     const response = await api.get(`/escolas/${escolaId.value}`)
     if (response.data.logoUrl) {
       logoUrl.value = `${BASE_URL_SERVER}${response.data.logoUrl}`
@@ -124,7 +139,6 @@ const handleFileChange = async event => {
       formData,
       { headers: { 'Content-Type': 'multipart/form-data' } }
     )
-
     logoUrl.value = `${BASE_URL_SERVER}${response.data.logoUrl}`
   } catch (error) {
     console.error('Erro ao fazer upload do logotipo:', error)
@@ -135,11 +149,16 @@ onMounted(() => carregarLogo())
 </script>
 
 <style scoped>
+/* ESTRUTURA BASE */
 .dashboard-container {
   display: flex;
   height: 100vh;
+  background-color: #131129;
+  overflow: hidden;
+  position: relative;
 }
 
+/* SIDEBAR REVISADA */
 .sidebar {
   width: 250px;
   background-color: #1a202c;
@@ -147,6 +166,9 @@ onMounted(() => carregarLogo())
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  z-index: 1001;
 }
 
 .sidebar-header {
@@ -164,8 +186,8 @@ onMounted(() => carregarLogo())
 }
 
 .school-logo {
-  max-width: 240px;
-  height: 115px;
+  max-width: 100%;
+  max-height: 115px;
   object-fit: contain;
   margin-bottom: 5px;
 }
@@ -201,46 +223,143 @@ onMounted(() => carregarLogo())
   list-style: none;
   padding: 0;
   margin: 0;
-}
-
-.menu li.active {
-  background-color: #2d3748;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .menu li a {
   display: flex;
   align-items: center;
   padding: 12px 20px;
-  color: white;
+  color: #a0aec0;
   text-decoration: none;
+  transition: 0.2s;
+  gap: 12px;
 }
 
-.menu li a:hover {
+.menu li.active a, .menu li a:hover {
   background-color: #2d3748;
+  color: white;
+  border-left: 4px solid #63b3ed;
 }
 
 .sidebar-footer {
   padding: 15px 20px;
   display: flex;
   flex-direction: column;
+  border-top: 1px solid #2d3748;
+  gap: 10px;
 }
 
+.sidebar-footer a {
+  color: #a0aec0;
+  text-decoration: none;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* CONTEÚDO PRINCIPAL */
 .main-content {
   flex: 1;
-  background-color: #f7fafc;
+  background-color: #131129;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .main-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
-  background-color: white;
-  border-bottom: 1px solid #e2e8f0;
+  padding: 0 25px;
+  height: 70px;
+  background-color: #131129;
+  border-bottom: 1px solid #2d3748;
+  flex-shrink: 0;
+}
+
+.welcome-text {
+  color: white;
+  font-size: 1.1rem;
+  margin: 0;
 }
 
 .user-profile img {
   border-radius: 50%;
+  border: 2px solid #63b3ed;
+}
+
+.page-content {
+  padding: 20px;
+  flex: 1;
+}
+
+/* --- RESPONSIVIDADE (MEDIA QUERIES) --- */
+
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 15px;
+  left: 15px;
+  z-index: 1002;
+  background: #63b3ed;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+@media (max-width: 1024px) {
+  .mobile-menu-toggle {
+    display: block;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -250px;
+    top: 0;
+    bottom: 0;
+  }
+
+  .sidebar.sidebar-open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+  }
+
+  .main-header {
+    padding-left: 75px;
+  }
+
+  .welcome-text {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome-text {
+    display: none;
+  }
+  
+  .main-header {
+    justify-content: flex-end;
+  }
+
+  .page-content {
+    padding: 10px;
+  }
 }
 </style>

@@ -41,7 +41,7 @@
               </div>
               <div>
                 <label for="dataNascimento">Data de Nascimento</label>
-                <input type="date" id="dataNascimento" v-model="form.dataNascimento" required />
+                <input type="date" id="dataNascimento" v-model="form.dataNascimento" max="9999-12-31" required />
               </div>
               <div>
                 <label for="nacionalidade">Nacionalidade</label>
@@ -132,7 +132,7 @@
               </div>
               <div>
                 <label for="dataAdmissao">Data de Admissão</label>
-                <input type="date" id="dataAdmissao" v-model="form.dataAdmissao" required>
+                <input type="date" id="dataAdmissao" v-model="form.dataAdmissao" max="9999-12-31" required>
               </div>
             </div>
           </fieldset>
@@ -297,4 +297,40 @@ input:read-only { background-color: #2a2a3f; cursor: not-allowed; }
 .btn-principal { background-color: #e45da9; }
 .btn-secundario { background-color: #3e3e5b; }
 .button-group button:hover { opacity: 0.9; transform: translateY(-2px); }
+
+/* ===================== RESPONSIVIDADE (APENAS ADIÇÃO) ===================== */
+
+@media (max-width: 1024px) {
+  .funcionario-page {
+    padding: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .button-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .top-actions {
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .funcionario-page {
+    padding: 1rem;
+  }
+
+  .funcionario-page h1 {
+    font-size: 1.2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    text-align: center;
+  }
+}
 </style>

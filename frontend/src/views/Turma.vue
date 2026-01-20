@@ -202,23 +202,25 @@ onMounted(loadData);
 
 <style scoped>
 /* Estilos da página e formulário seguindo o padrão profissional */
-.turma-page { background-color: #1f1c3a; padding: 2rem; border-radius: 12px; }
-.turma-page h1 { color: #f0f0f0; margin-bottom: 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+.turma-page { background-color: #1f1c3a; padding: 2rem; border-radius: 12px; min-height: 100vh; }
+.turma-page h1 { color: #f0f0f0; margin-bottom: 1.5rem; font-weight: 600; display: flex; align-items: center; gap: 10px; font-size: clamp(1.2rem, 4vw, 1.8rem); }
 .top-actions { display: flex; justify-content: flex-end; margin-bottom: 1.5rem; }
 .top-actions button { padding: 0.8rem 1.5rem; background-color: #e45da9; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; transition: all 0.2s ease; display: flex; align-items: center; gap: 8px; }
 .top-actions button:hover { background-color: #ff7eb3; transform: translateY(-2px); }
 
-.form-container { padding: 10px; }
-.form-container h2 { text-align: center; color: #e45da9; font-weight: 600; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; gap: 10px; }
-.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.form-container { padding: 10px; width: 100%; max-width: 100%; }
+.form-container h2 { text-align: center; color: #e45da9; font-weight: 600; margin-bottom: 2rem; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 1.3rem; }
+
+/* Grid responsivo: 2 colunas no desktop, 1 coluna no mobile */
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
 .full-width-field { grid-column: 1 / -1; }
 
 label { font-weight: 600; color: #c799df; margin-bottom: 8px; display: block; font-size: 0.9rem; }
 input, select { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #3e3e5b; background-color: #181529; color: #f0f0f0; outline: none; font-size: 1rem; font-family: 'Poppins', sans-serif; transition: all 0.3s ease; }
 input:focus, select:focus { border-color: #e45da9; box-shadow: 0 0 8px rgba(228, 93, 169, 0.3); }
 
-.dias-semana-group { display: flex; gap: 15px; flex-wrap: wrap; background-color: #181529; padding: 15px; border-radius: 10px; border: 1px solid #3e3e5b; }
-.dias-semana-group label { display: flex; align-items: center; gap: 8px; color: #f0f0f0; cursor: pointer; font-weight: 400; }
+.dias-semana-group { display: flex; gap: 10px; flex-wrap: wrap; background-color: #181529; padding: 15px; border-radius: 10px; border: 1px solid #3e3e5b; }
+.dias-semana-group label { display: flex; align-items: center; gap: 8px; color: #f0f0f0; cursor: pointer; font-weight: 400; margin-bottom: 0; }
 .dias-semana-group input[type="checkbox"] { width: auto; accent-color: #e45da9; }
 
 .button-group { display: flex; justify-content: flex-end; gap: 15px; margin-top: 2.5rem; border-top: 1px solid #3e3e5b; padding-top: 1.5rem; }
@@ -227,7 +229,21 @@ input:focus, select:focus { border-color: #e45da9; box-shadow: 0 0 8px rgba(228,
 .btn-secundario { background-color: #3e3e5b; }
 .button-group button:hover { opacity: 0.9; transform: translateY(-2px); }
 
-@media (max-width: 600px) {
-  .form-grid { grid-template-columns: 1fr; }
+/* REGRAS DE RESPONSIVIDADE (TABLET E CELULAR) */
+@media (max-width: 768px) {
+  .turma-page { padding: 1rem; }
+  .top-actions { justify-content: center; }
+  .top-actions button { width: 100%; justify-content: center; }
+  
+  .form-grid { grid-template-columns: 1fr; } /* Força 1 coluna no mobile */
+  
+  .button-group { flex-direction: column; } /* Botões um em cima do outro */
+  .button-group button { width: 100%; }
+  
+  .dias-semana-group { justify-content: space-between; }
+}
+
+@media (max-width: 480px) {
+  .dias-semana-group label { width: 45%; } /* Dias da semana em 2 colunas no celular pequeno */
 }
 </style>

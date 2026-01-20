@@ -3,43 +3,57 @@
     <div class="reset-box">
       <h1>Redefinir Senha</h1>
 
-      <p v-if="!sucesso">
-        Informe sua nova senha abaixo.
+      <p v-if="!sucesso" class="description">
+        Informe sua nova senha abaixo para recuperar o acesso.
       </p>
 
-      <form v-if="!sucesso" @submit.prevent="resetarSenha">
+      <form v-if="!sucesso" @submit.prevent="resetarSenha" class="reset-form">
         <div class="form-group">
           <label for="password">Nova senha</label>
-          <input
-            id="password"
-            type="password"
-            v-model="password"
-            required
-            minlength="6"
-          />
+          <div class="input-wrapper">
+            <input
+              id="password"
+              :type="showPassword ? 'text' : 'password'"
+              v-model="password"
+              required
+              minlength="6"
+              placeholder="Mínimo 6 caracteres"
+            />
+            <button type="button" class="toggle-eye" @click="showPassword = !showPassword">
+              <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
         </div>
 
         <div class="form-group">
           <label for="confirmPassword">Confirmar nova senha</label>
-          <input
-            id="confirmPassword"
-            type="password"
-            v-model="confirmPassword"
-            required
-            minlength="6"
-          />
+          <div class="input-wrapper">
+            <input
+              id="confirmPassword"
+              :type="showConfirmPassword ? 'text' : 'password'"
+              v-model="confirmPassword"
+              required
+              minlength="6"
+              placeholder="Repita a senha"
+            />
+            <button type="button" class="toggle-eye" @click="showConfirmPassword = !showConfirmPassword">
+              <i :class="showConfirmPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+            </button>
+          </div>
         </div>
 
-        <button type="submit" :disabled="loading">
+        <button type="submit" class="btn-primary" :disabled="loading">
           {{ loading ? 'Salvando...' : 'Alterar senha' }}
         </button>
       </form>
 
-      <p v-if="error" class="error">{{ error }}</p>
+      <p v-if="error" class="error-message">{{ error }}</p>
 
-      <div v-if="sucesso" class="success">
-        <p>✅ Senha alterada com sucesso!</p>
-        <router-link to="/login">Voltar para o login</router-link>
+      <div v-if="sucesso" class="success-container">
+        <div class="success-icon">✅</div>
+        <p>Senha alterada com sucesso!</p>
+        <span class="redirect-text">Redirecionando para o login...</span>
+        <router-link to="/login" class="btn-login">Voltar agora</router-link>
       </div>
     </div>
   </div>
@@ -64,6 +78,10 @@ export default {
     const error = ref('')
     const sucesso = ref(false)
 
+    // Estados para mostrar/esconder senha
+    const showPassword = ref(false)
+    const showConfirmPassword = ref(false)
+
     async function resetarSenha() {
       error.value = ''
 
@@ -87,10 +105,9 @@ export default {
 
         sucesso.value = true
 
-        // redirecionamento opcional automático
         setTimeout(() => {
           router.push('/login')
-        }, 3000)
+        }, 12000)   // 12000 é equivalente a 12 segundos
       } catch (err) {
         error.value =
           err.response?.data?.error ||
@@ -106,6 +123,8 @@ export default {
       loading,
       error,
       sucesso,
+      showPassword,
+      showConfirmPassword,
       resetarSenha
     }
   }
@@ -113,82 +132,154 @@ export default {
 </script>
 
 <style scoped>
+/* ESTRUTURA BASE E TEMA DARK */
 .reset-senha-page {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100vh;
-  background: #f0f2f5;
+  min-height: 100vh;
+  background: #181529; /* Sincronizado com seu login */
+  padding: 20px;
 }
 
 .reset-box {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 360px;
+  background: #2c2c3e; /* Sincronizado com seu login */
+  padding: 40px 30px;
+  border-radius: 15px;
+  width: 100%;
+  max-width: 400px;
   text-align: center;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.4);
 }
 
 h1 {
   margin-bottom: 10px;
-  color: #333;
+  color: #ff3c78; /* Rosa padrão do seu sistema */
+  font-size: 24px;
 }
 
-p {
+.description {
   font-size: 14px;
-  color: #555;
+  color: #ddd;
+  margin-bottom: 25px;
 }
 
+/* FORMULÁRIO */
 .form-group {
   text-align: left;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
 }
 
 label {
   display: block;
   font-size: 14px;
-  margin-bottom: 5px;
-  color: #444;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 input {
   width: 100%;
-  padding: 10px;
+  padding: 12px 45px 12px 15px;
   border-radius: 8px;
-  border: 1px solid #ddd;
+  border: 1px solid #444;
+  background: #181529;
+  color: white;
+  outline: none;
+  font-size: 16px;
 }
 
-button {
+input:focus {
+  border-color: #ff3c78;
+}
+
+/* BOTÃO DE OLHO (UX) */
+.toggle-eye {
+  position: absolute;
+  right: 15px;
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+
+.toggle-eye:hover {
+  color: #ff3c78;
+}
+
+.btn-primary {
   width: 100%;
-  padding: 12px;
-  background-color: dodgerblue;
+  padding: 14px;
+  background-color: #ff3c78;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 16px;
+  font-weight: bold;
+  transition: opacity 0.3s;
 }
 
-button:disabled {
-  background-color: #8bb6f0;
+.btn-primary:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.btn-primary:disabled {
+  background-color: #4b5563;
   cursor: not-allowed;
 }
 
-.success {
+/* MENSAGENS */
+.success-container {
   margin-top: 15px;
-  color: green;
+  color: #2ecc71;
 }
 
-.success a {
+.success-icon {
+  font-size: 40px;
+  margin-bottom: 10px;
+}
+
+.redirect-text {
+  display: block;
+  font-size: 12px;
+  color: #94a3b8;
+  margin-top: 10px;
+}
+
+.btn-login {
   display: inline-block;
-  margin-top: 10px;
-  color: dodgerblue;
+  margin-top: 20px;
+  color: #ff3c78;
   text-decoration: none;
+  font-weight: bold;
 }
 
-.error {
-  margin-top: 10px;
-  color: red;
+.error-message {
+  margin-top: 15px;
+  color: #ff6b81;
+  font-size: 14px;
+  background: rgba(255, 107, 129, 0.1);
+  padding: 10px;
+  border-radius: 5px;
+}
+
+/* RESPONSIVIDADE */
+@media (max-width: 480px) {
+  .reset-box {
+    padding: 30px 20px;
+  }
+  
+  h1 {
+    font-size: 20px;
+  }
 }
 </style>

@@ -11,7 +11,6 @@
 
     <div v-if="activeTab === 'venda'" class="tab-content sale-grid">
       <div class="main-column">
-        <!-- Seção de produtos -->
         <section class="products-section card">
           <div class="section-header">
             <h2 class="title-purple"><i class="fas fa-box-open"></i> Estoque</h2>
@@ -40,7 +39,6 @@
           </div>
         </section>
 
-        <!-- Seção de cadastro de produto -->
         <section class="admin-panel card">
           <h2 class="title-purple"><i class="fas fa-plus-circle"></i> Novo Produto</h2>
           <div class="form-row">
@@ -69,7 +67,6 @@
         </section>
       </div>
 
-      <!-- Coluna do carrinho -->
       <div class="side-column">
         <div class="cart-card card">
           <h2 class="title-purple"><i class="fas fa-shopping-cart"></i> Carrinho</h2>
@@ -118,7 +115,6 @@
       </div>
     </div>
 
-    <!-- Histórico de vendas -->
     <div v-if="activeTab === 'historico'" class="tab-content history-layout">
       <div class="history-list card">
         <div class="section-header">
@@ -217,7 +213,6 @@ function getImageUrl(filename) {
 async function loadProducts() {
     try {
         const { data } = await api.get('/produtos')
-        // Ajusta imageUrl para cada produto
         products.value = data.map(p => ({ ...p, imageUrl: p.imageUrl ? getImageUrl(p.imageUrl) : null }))
     } catch (err) { showNotification('Erro ao carregar estoque', true); }
 }
@@ -232,7 +227,7 @@ async function addProduct() {
     formData.append('nome', newProduct.nome);
     formData.append('preco', newProduct.preco);
     formData.append('quantidade', newProduct.quantidade);
-    if (newProduct.imagem) formData.append('foto', newProduct.imagem); // Multer espera 'foto'
+    if (newProduct.imagem) formData.append('foto', newProduct.imagem);
 
     try {
         const { data } = await api.post('/produtos', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -328,17 +323,25 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* Mantive todos os estilos do seu arquivo original */
+/* BASE */
 .pdv-container { background: #0f172a; min-height: 100vh; color: #f8fafc; font-family: 'Inter', sans-serif; }
 .card { background: #1e293b; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.2); }
 .title-purple { color: #a78bfa; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; margin-bottom: 15px; }
-.nav-tabs { display: flex; background: #1e293b; padding: 10px 20px; gap: 10px; border-bottom: 2px solid #334155; }
-.nav-tabs button { background: none; border: none; color: #94a3b8; padding: 12px 24px; cursor: pointer; border-radius: 8px; font-weight: 600; }
+
+/* NAVEGAÇÃO */
+.nav-tabs { display: flex; background: #1e293b; padding: 10px 20px; gap: 10px; border-bottom: 2px solid #334155; flex-wrap: wrap; }
+.nav-tabs button { background: none; border: none; color: #94a3b8; padding: 12px 24px; cursor: pointer; border-radius: 8px; font-weight: 600; flex: 1; min-width: 150px; }
 .nav-tabs button.active { background: #8b5cf6; color: white; }
+
 .tab-content { padding: 20px; }
-.sale-grid { display: grid; grid-template-columns: 1fr 400px; gap: 20px; }
-.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.search-box input { background: #334155; border: 1px solid #475569; color: white; padding: 8px 16px; border-radius: 20px; width: 200px; outline: none; }
+
+/* LAYOUT VENDA */
+.sale-grid { display: grid; grid-template-columns: 1fr 400px; gap: 20px; align-items: start; }
+
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+.search-box input { background: #334155; border: 1px solid #475569; color: white; padding: 8px 16px; border-radius: 20px; width: 100%; max-width: 200px; outline: none; }
+
+/* PRODUTOS */
 .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; max-height: 480px; overflow-y: auto; padding: 5px; }
 .product-card { background: #334155; border-radius: 10px; padding: 12px; cursor: pointer; position: relative; border: 2px solid transparent; transition: 0.2s; text-align: center; }
 .product-card:hover { border-color: #8b5cf6; transform: translateY(-2px); }
@@ -348,15 +351,18 @@ onMounted(() => {
 .p-price { color: #4ade80; font-weight: bold; font-size: 0.95rem; }
 .product-badge { position: absolute; top: 6px; left: 6px; background: #8b5cf6; font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; }
 .btn-delete-float { position: absolute; top: 5px; right: 5px; background: none; border: none; color: #ef4444; cursor: pointer; }
+
+/* NOVO PRODUTO */
 .admin-panel { margin-top: 20px; }
-.form-row { display: flex; gap: 12px; align-items: flex-end; }
+.form-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.input-group { flex: 1; min-width: 120px; }
 .input-group label { display: block; font-size: 0.7rem; color: #94a3b8; margin-bottom: 4px; }
 .input-group input { background: #334155; border: 1px solid #475569; color: white; padding: 8px; border-radius: 6px; width: 100%; }
-.main-input { flex: 2; }
-.small-input { flex: 0.5; }
-.file-input { flex: 1; }
-.btn-primary { background: #8b5cf6; color: white; border: none; padding: 9px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-.cart-card { height: calc(100vh - 125px); display: flex; flex-direction: column; }
+.main-input { flex: 2; min-width: 200px; }
+.btn-primary { background: #8b5cf6; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; width: 100%; }
+
+/* CARRINHO */
+.cart-card { min-height: 500px; height: calc(100vh - 125px); display: flex; flex-direction: column; }
 .cart-items { flex: 1; overflow-y: auto; }
 .cart-item { border-bottom: 1px solid #334155; padding: 12px 0; }
 .item-info { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 0.9rem; }
@@ -371,8 +377,11 @@ onMounted(() => {
 .cart-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 10px; }
 .btn-checkout { background: #22c55e; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
 .btn-cancel { background: #f97316; color: white; padding: 14px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+/* HISTÓRICO */
 .history-layout { display: grid; grid-template-columns: 1fr 380px; gap: 20px; }
-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+.table-responsive { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 0.9rem; min-width: 400px; }
 th { text-align: left; padding: 12px; color: #94a3b8; border-bottom: 2px solid #334155; }
 td { padding: 12px; border-bottom: 1px solid #334155; }
 tr:hover { background: #334155; cursor: pointer; }
@@ -381,9 +390,59 @@ tr:hover { background: #334155; cursor: pointer; }
 .r-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 4px; }
 .r-total { display: flex; justify-content: space-between; font-weight: bold; margin-top: 10px; border-top: 1px solid #1e293b; padding-top: 5px; }
 .btn-print { width: 100%; margin-top: 15px; padding: 10px; background: #1e293b; color: white; border: none; border-radius: 4px; cursor: pointer; }
+
+/* UTILS */
 .toast { position: fixed; bottom: 20px; right: 20px; background: #22c55e; color: white; padding: 12px 24px; border-radius: 8px; transform: translateY(150%); transition: 0.3s; z-index: 9999; }
 .toast.show { transform: translateY(0); }
 .toast.error { background: #ef4444; }
+
+/* --- RESPONSIVIDADE (MEDIA QUERIES) --- */
+
+/* Tablets e Telas Médias (max-width: 1024px) */
+@media (max-width: 1024px) {
+  .sale-grid {
+    grid-template-columns: 1fr; /* Carrinho vai para baixo dos produtos */
+  }
+  .cart-card {
+    height: auto;
+    min-height: auto;
+  }
+  .history-layout {
+    grid-template-columns: 1fr; /* Recibo vai para baixo da tabela */
+  }
+}
+
+/* Celulares (max-width: 640px) */
+@media (max-width: 640px) {
+  .tab-content { padding: 10px; }
+  .nav-tabs { padding: 10px; }
+  .nav-tabs button { padding: 10px; font-size: 0.8rem; }
+  
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .search-box { width: 100%; }
+  .search-box input { max-width: none; }
+
+  .products-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+
+  .form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .input-group { width: 100%; }
+
+  .cart-actions {
+    grid-template-columns: 1fr; /* Botões de ação um abaixo do outro */
+  }
+  
+  .pay-methods {
+    grid-template-columns: 1fr 1fr; /* Mantém 2 colunas para botões pequenos */
+  }
+}
 
 @media print {
     .nav-tabs, .main-column, .cart-card, .btn-print, .btn-refresh { display: none !important; }

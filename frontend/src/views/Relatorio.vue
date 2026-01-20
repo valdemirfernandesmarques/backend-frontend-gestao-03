@@ -1,46 +1,67 @@
 <template>
   <div class="container">
-    <!-- Cabeçalho -->
     <header class="header">
       <h1><i class="fas fa-chart-line"></i> Relatório Financeiro Completo</h1>
     </header>
 
-    <!-- Filtros de Data -->
     <div class="filters-card">
       <div class="filters">
-        <label>Período:</label>
-        <input type="date" v-model="filters.start" />
-        <span>até</span>
-        <input type="date" v-model="filters.end" />
-        <button @click="applyFilters" class="btn btn-primary">
-          <i class="fas fa-filter"></i> Filtrar
-        </button>
-        <button @click="resetFilters" class="btn btn-secondary">
-          <i class="fas fa-undo"></i> Resetar
-        </button>
+        <div class="date-inputs">
+          <div class="input-group">
+            <label>Início:</label>
+            <input 
+              type="text" 
+              v-model="filters.start" 
+              placeholder="DD/MM/AAAA" 
+              maxlength="10"
+              @input="formatarDataInput('start')"
+            />
+          </div>
+          <span class="divider">até</span>
+          <div class="input-group">
+            <label>Fim:</label>
+            <input 
+              type="text" 
+              v-model="filters.end" 
+              placeholder="DD/MM/AAAA" 
+              maxlength="10"
+              @input="formatarDataInput('end')"
+            />
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button @click="applyFilters" class="btn btn-primary">
+            <i class="fas fa-filter"></i> Filtrar
+          </button>
+          <button @click="resetFilters" class="btn btn-secondary">
+            <i class="fas fa-undo"></i> Resetar
+          </button>
+        </div>
       </div>
     </div>
 
-    <!-- Feedback de carregamento -->
     <div v-if="loading" class="loading">Carregando relatório...</div>
 
-    <!-- Resumo Financeiro -->
-    <div v-else class="summary card">
-      <button class="summary-item receita" @click="filterByType('Receita')">
-        Receita Total<br><strong>{{ formatCurrency(totalReceita) }}</strong>
-      </button>
-      <button class="summary-item despesa" @click="filterByType('Despesa')">
-        Despesa Total<br><strong>{{ formatCurrency(totalDespesa) }}</strong>
-      </button>
-      <button class="summary-item saldo" @click="resetFilters">
-        Saldo Final<br><strong>{{ formatCurrency(saldoFinal) }}</strong>
-      </button>
+    <div v-else class="summary-wrapper">
+      <div class="summary-grid">
+        <button class="summary-item receita" @click="filterByType('Receita')">
+          <span>Receita Total</span>
+          <strong>{{ formatCurrency(totalReceita) }}</strong>
+        </button>
+        <button class="summary-item despesa" @click="filterByType('Despesa')">
+          <span>Despesa Total</span>
+          <strong>{{ formatCurrency(totalDespesa) }}</strong>
+        </button>
+        <button class="summary-item saldo" @click="resetFilters">
+          <span>Saldo Final</span>
+          <strong>{{ formatCurrency(saldoFinal) }}</strong>
+        </button>
+      </div>
       <button class="btn-export btn-success" @click="exportPDF">
         <i class="fas fa-file-pdf"></i> Exportar PDF
       </button>
     </div>
 
-    <!-- Tabela de Movimentações -->
     <div v-if="!loading" class="report-table card">
       <h2>Movimentações</h2>
       <div class="table-responsive">
@@ -50,7 +71,7 @@
               <th>Data</th>
               <th>Tipo</th>
               <th>Descrição</th>
-              <th>Aluno/Funcionário/Produto</th>
+              <th>Entidade</th>
               <th>Valor (R$)</th>
               <th>Saldo Parcial (R$)</th>
               <th>Nota Fiscal</th>
@@ -62,14 +83,14 @@
               :key="index"
               :class="entry.type==='Receita' ? 'row-receita' : 'row-despesa'"
             >
-              <td>{{ formatDate(entry.date) }}</td>
+              <td class="nowrap">{{ formatDate(entry.date) }}</td>
               <td>{{ entry.type }}</td>
               <td>{{ entry.description }}</td>
               <td>{{ entry.entity }}</td>
-              <td :class="{'credit': entry.type==='Receita', 'debit': entry.type==='Despesa'}">
+              <td :class="{'credit': entry.type==='Receita', 'debit': entry.type==='Despesa'}" class="nowrap">
                 {{ formatCurrency(entry.value) }}
               </td>
-              <td>{{ formatCurrency(calculatePartialBalance(index)) }}</td>
+              <td class="nowrap">{{ formatCurrency(calculatePartialBalance(index)) }}</td>
               <td>
                 <button @click="emitirNotaFiscal(entry)" class="btn btn-nf">
                   <i class="fas fa-file-invoice"></i> NF
@@ -84,8 +105,7 @@
       </div>
     </div>
 
-    <!-- Modal Nota Fiscal -->
-    <div v-if="showNFModal" class="modal">
+    <div v-if="showNFModal" class="modal" @click.self="showNFModal=false">
       <div class="modal-content">
         <div class="modal-header">
           <h3>Emitir Nota Fiscal</h3>
@@ -118,7 +138,7 @@
 <script>
 import jsPDF from "jspdf";
 import autoTable from 'jspdf-autotable';
-import api from '../api/api.js'; // ajuste conforme caminho
+import api from '../api/api.js';
 
 export default {
   name: "Relatorio",
@@ -146,6 +166,27 @@ export default {
   methods: {
     formatCurrency(value) { return `R$ ${value.toFixed(2)}`; },
     formatDate(date) { return new Date(date).toLocaleDateString("pt-BR"); },
+    
+    // Máscara de Data Brasileira DD/MM/AAAA
+    formatarDataInput(field) {
+      let val = this.filters[field].replace(/\D/g, ""); // Remove tudo que não é dígito
+      if (val.length > 8) val = val.slice(0, 8); // Garante o limite de 8 dígitos
+
+      if (val.length >= 5) {
+        val = `${val.slice(0, 2)}/${val.slice(2, 4)}/${val.slice(4)}`;
+      } else if (val.length >= 3) {
+        val = `${val.slice(0, 2)}/${val.slice(2)}`;
+      }
+      this.filters[field] = val;
+    },
+
+    // Converte DD/MM/AAAA para Objeto Date seguro
+    parseBrazilianDate(dateStr) {
+      if (!dateStr || dateStr.length < 10) return null;
+      const [day, month, year] = dateStr.split("/");
+      return new Date(year, month - 1, day);
+    },
+
     calculatePartialBalance(index) {
       let balance = 0;
       for (let i = 0; i <= index; i++) {
@@ -156,23 +197,31 @@ export default {
     async loadRelatorio() {
       this.loading = true;
       try {
-        const res = await api.get('/relatorios'); // rota backend real
+        const res = await api.get('/relatorios');
         this.entries = res.data || [];
         this.filteredEntries = [...this.entries];
       } catch (e) {
         console.error('Erro ao carregar dados do relatório:', e);
-        alert('Erro ao carregar dados do relatório');
       } finally {
         this.loading = false;
       }
     },
     applyFilters() {
-      const start = this.filters.start ? new Date(this.filters.start) : null;
-      const end = this.filters.end ? new Date(this.filters.end) : null;
+      const start = this.parseBrazilianDate(this.filters.start);
+      const end = this.parseBrazilianDate(this.filters.end);
+      
       this.filteredEntries = this.entries.filter(entry => {
-        const date = new Date(entry.date);
-        if (start && date < start) return false;
-        if (end && date > end) return false;
+        const entryDate = new Date(entry.date);
+        entryDate.setHours(0, 0, 0, 0); // Normaliza para comparação
+
+        if (start) {
+          start.setHours(0, 0, 0, 0);
+          if (entryDate < start) return false;
+        }
+        if (end) {
+          end.setHours(0, 0, 0, 0);
+          if (entryDate > end) return false;
+        }
         return true;
       });
     },
@@ -250,11 +299,18 @@ export default {
   padding: 20px; 
   background-color: #1f1f1f; 
   color: #f0f0f0;
+  min-height: 100vh;
 }
 .header { 
   margin-bottom: 20px; 
   color: #e0aaff; 
+  text-align: center;
 }
+.header h1 {
+  font-size: clamp(1.2rem, 4vw, 2rem);
+}
+
+/* FILTROS RESPONSIVOS */
 .filters-card { 
   background: #2c2c2c; 
   padding: 15px 20px; 
@@ -262,57 +318,128 @@ export default {
   box-shadow: 0 2px 8px rgba(0,0,0,0.5); 
   margin-bottom: 20px; 
 }
-.filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.filters label { font-weight: bold; }
+.filters { 
+  display: flex; 
+  flex-direction: row; 
+  justify-content: space-between; 
+  align-items: center; 
+  gap: 15px;
+  flex-wrap: wrap; 
+}
+.date-inputs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.input-group {
+  display: flex;
+  flex-direction: column;
+}
+.input-group label {
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+  color: #aaa;
+}
 .filters input { 
-  padding: 6px 10px; 
-  border-radius: 4px; 
+  padding: 10px 12px; 
+  border-radius: 6px; 
   border: 1px solid #555; 
   background: #333; 
   color: #fff; 
+  width: 140px;
+  outline: none;
 }
-.filters button { 
-  padding: 6px 12px; 
-  border-radius: 4px; 
+.filters input:focus {
+  border-color: #6a1b9a;
+}
+.filter-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* RESUMO FINANCEIRO RESPONSIVO */
+.summary-wrapper {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+}
+.summary-item { 
+  padding: 15px; 
+  border-radius: 6px; 
+  color: white; 
+  text-align: center; 
+  border: none;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transition: transform 0.2s;
+}
+.summary-item:hover { transform: scale(1.02); }
+.summary-item span { font-size: 0.9rem; font-weight: normal; }
+.summary-item strong { font-size: 1.1rem; }
+
+.summary-item.receita { background-color: #2f855a; }
+.summary-item.despesa { background-color: #c53030; }
+.summary-item.saldo { background-color: #2b6cb0; }
+
+.btn {
+  padding: 10px 15px; 
+  border-radius: 6px; 
   cursor: pointer; 
   border: none;
+  font-weight: bold;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
-.btn-primary { 
-  background-color: #6a1b9a; 
-  color: white; 
-}
-.btn-primary:hover { background-color: #8e24aa; }
-.btn-secondary { 
-  background-color: #555; 
-  color: white; 
-}
-.btn-secondary:hover { background-color: #777; }
-.summary.card { display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px; }
-.summary-item { flex: 1; padding: 15px; border-radius: 6px; color: white; text-align: center; font-weight: bold; cursor: pointer; }
-.summary-item.receita { background-color: #48bb78; }
-.summary-item.despesa { background-color: #f56565; }
-.summary-item.saldo { background-color: #4a90e2; }
-.btn-export { padding: 10px 15px; background-color: #6a1b9a; color: #fff; border-radius: 6px; cursor: pointer; }
-.btn-export:hover { background-color: #8e24aa; }
-.btn-nf { padding: 8px 12px; background-color: #ff8c00; color: #fff; border-radius: 6px; cursor: pointer; }
-.btn-nf:hover { background-color: #ffa500; }
+.btn-primary { background-color: #6a1b9a; color: white; }
+.btn-secondary { background-color: #555; color: white; }
+.btn-success { background-color: #2f855a; color: white; width: 100%; }
+.btn-nf { background-color: #d69e2e; color: #fff; padding: 6px 10px; font-size: 0.8rem; }
+
+/* TABELA RESPONSIVA */
 .report-table.card { background: #2c2c2c; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.5); }
-.table-responsive { overflow-x:auto; }
-.report-table table { width: 100%; border-collapse: collapse; }
-.report-table th { padding: 10px; color: white; }
-.report-table td { padding: 10px; border-bottom: 1px solid #555; }
-.row-receita { background-color: #2e4d2e; }
-.row-despesa { background-color: #5a1f1f; }
+.table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.report-table table { width: 100%; border-collapse: collapse; min-width: 700px; }
+.report-table th { padding: 12px 10px; color: #e0aaff; text-align: left; background: #333; }
+.report-table td { padding: 12px 10px; border-bottom: 1px solid #444; font-size: 0.9rem; }
+.nowrap { white-space: nowrap; }
+
+.row-receita { background-color: rgba(47, 133, 90, 0.1); }
+.row-despesa { background-color: rgba(197, 48, 48, 0.1); }
 .credit { color: #48bb78; font-weight: bold; }
 .debit { color: #f56565; font-weight: bold; }
-.empty { text-align: center; padding: 15px; color: #aaa; }
-.modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index: 1000; }
-.modal-content { background: #333; padding:20px; border-radius:8px; width:400px; max-width:90%; box-shadow: 0 0 15px rgba(0,0,0,0.7); color: #f0f0f0; }
-.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
-.close-modal { cursor:pointer; font-size:20px; color: #f0f0f0; }
-.modal-body input, .modal-body select { width:100%; margin-bottom:10px; padding:5px; border-radius:4px; border:1px solid #555; background: #222; color: #fff; }
-.modal-footer { display:flex; justify-content:flex-end; gap:10px; }
-.modal-footer .btn-secondary { background-color: #555; }
-.modal-footer .btn-primary { background-color: #6a1b9a; }
-.modal-footer .btn-primary:hover { background-color: #8e24aa; }
+
+/* MODAL RESPONSIVO */
+.modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index: 2000; padding: 15px; }
+.modal-content { background: #2c2c2c; padding:20px; border-radius:8px; width:100%; max-width:450px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
+.modal-body label { display: block; margin-top: 10px; color: #aaa; font-size: 0.85rem; }
+.modal-body input, .modal-body select { width:100%; margin-top:5px; padding:10px; border-radius:4px; border:1px solid #555; background: #1f1f1f; color: #fff; }
+
+/* --- MEDIA QUERIES --- */
+@media (max-width: 768px) {
+  .filters { flex-direction: column; align-items: stretch; }
+  .date-inputs { justify-content: space-between; }
+  .filters input { flex: 1; width: auto; }
+  .filter-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .summary-grid { grid-template-columns: 1fr; } 
+}
+
+@media (max-width: 480px) {
+  .date-inputs { flex-direction: column; align-items: stretch; }
+  .divider { text-align: center; display: block; margin: 5px 0; }
+  .container { padding: 10px; }
+  .header h1 { font-size: 1.2rem; }
+  .report-table.card { padding: 10px; }
+}
 </style>
