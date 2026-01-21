@@ -58,8 +58,9 @@
                 id="dataMatricula" 
                 v-model="form.dataMatricula" 
                 required 
+                max="9999-12-31"
               />
-            </div>
+              </div>
 
             <div class="form-group">
               <label for="valorMensalidade">Valor da Mensalidade (R$) *</label>
@@ -218,7 +219,6 @@ const loadData = async () => {
       api.get('/turmas', authConfig)
     ]);
 
-    // Filtrar dados pela escola
     matriculas.value = (matriculasRes.data || []).filter(m => m.escolaId === escolaId);
     alunos.value = alunosRes.data || [];
     turmas.value = turmasRes.data || [];
@@ -249,14 +249,12 @@ const resetForm = () => {
   };
 };
 
-// Abrir modal para nova matrícula
 const openModal = () => {
   resetForm();
   editMode.value = false;
   isModalOpen.value = true;
 };
 
-// Editar matrícula
 const editMatricula = (row) => {
   const matricula = row.original || row;
   editMode.value = true;
@@ -274,29 +272,25 @@ const editMatricula = (row) => {
   isModalOpen.value = true;
 };
 
-// Fechar modal
 const closeModal = () => {
   isModalOpen.value = false;
   resetForm();
 };
 
-// Enviar formulário - Versão Simplificada
 const submitForm = async () => {
   if (!checkAuth()) return;
 
-  // Validações
-  if (!form.value.alunoId) {
-    alert('Selecione um aluno.');
+  if (!form.value.alunoId) { alert('Selecione um aluno.'); return; }
+  if (!form.value.turmaId) { alert('Selecione uma turma.'); return; }
+  if (!form.value.dataMatricula) { alert('Informe a data da matrícula.'); return; }
+  
+  // Validação adicional para o ano (impede anos como 0020 ou 20202)
+  const ano = new Date(form.value.dataMatricula).getFullYear();
+  if (ano < 1900 || ano > 2100) {
+    alert('Por favor, insira uma data válida com ano entre 1900 e 2100.');
     return;
   }
-  if (!form.value.turmaId) {
-    alert('Selecione uma turma.');
-    return;
-  }
-  if (!form.value.dataMatricula) {
-    alert('Informe a data da matrícula.');
-    return;
-  }
+
   if (form.value.valorMensalidade === null || form.value.valorMensalidade === '' || form.value.valorMensalidade < 0) {
     alert('Informe um valor válido para a mensalidade.');
     return;
@@ -306,8 +300,6 @@ const submitForm = async () => {
 
   try {
     const authConfig = getAuthConfig();
-    
-    // Payload simplificado
     const payload = {
       alunoId: parseInt(form.value.alunoId),
       turmaId: parseInt(form.value.turmaId),
@@ -318,11 +310,9 @@ const submitForm = async () => {
     };
 
     if (editMode.value) {
-      // Atualização
       await api.put(`/matriculas/${form.value.id}`, payload, authConfig);
       alert('Matrícula atualizada com sucesso!');
     } else {
-      // Criação
       await api.post('/matriculas', payload, authConfig);
       alert('Matrícula criada com sucesso!');
     }
@@ -332,23 +322,14 @@ const submitForm = async () => {
 
   } catch (err) {
     console.error('Erro ao salvar matrícula:', err);
-    
-    let errorMessage = 'Erro ao salvar matrícula. Verifique os dados.';
-    
-    if (err.response?.data?.message) {
-      errorMessage = err.response.data.message;
-    }
-    
-    alert(`Erro: ${errorMessage}`);
+    alert(`Erro: ${err.response?.data?.message || 'Erro ao salvar matrícula.'}`);
   } finally {
     submitting.value = false;
   }
 };
 
-// Excluir matrícula
 const deleteMatricula = async (row) => {
   if (!checkAuth()) return;
-  
   const matricula = row.original || row;
   if (!confirm(`Deseja realmente excluir a matrícula do aluno "${matricula.alunoNome}"?`)) return;
   
@@ -363,7 +344,6 @@ const deleteMatricula = async (row) => {
   }
 };
 
-// Watch para atualizar valor da mensalidade quando turma for selecionada
 watch(() => form.value.turmaId, (newTurmaId) => {
   if (newTurmaId && !editMode.value) {
     const turmaSelecionada = turmas.value.find(t => t.id === parseInt(newTurmaId));
@@ -374,7 +354,6 @@ watch(() => form.value.turmaId, (newTurmaId) => {
   }
 });
 
-// Inicialização
 onMounted(() => {
   if (checkAuth()) {
     loadData();
@@ -386,16 +365,15 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* APLICAÇÃO DA COR #131129 E RESPONSIVIDADE */
 .matricula-page {
   padding: 20px;
-  background-color: #131129; /* Cor de fundo principal solicitada */
+  background-color: #131129;
   min-height: 100vh;
   color: #ffffff;
 }
 
 .matricula-page h1 {
-  color: #e45da9; /* Rosa de destaque do sistema */
+  color: #e45da9;
   margin-bottom: 1.5rem;
   font-weight: 600;
   display: flex;
@@ -433,19 +411,9 @@ onMounted(() => {
   padding: 10px;
 }
 
-.form-container h2 {
-  text-align: center;
-  color: #ffffff;
-  margin-bottom: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsividade automática */
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-bottom: 20px;
 }
@@ -457,7 +425,7 @@ onMounted(() => {
 
 label {
   font-weight: 500;
-  color: #a0aec0; /* Cor de texto secundária do print */
+  color: #a0aec0;
   margin-bottom: 8px;
   font-size: 0.9rem;
 }
@@ -467,7 +435,7 @@ input, select {
   padding: 12px;
   border-radius: 8px;
   border: 1px solid #3b3b4f;
-  background: #1f1c3a; /* Cor de fundo dos inputs/cards do print */
+  background: #1f1c3a;
   color: #ffffff;
   outline: none;
   transition: all 0.3s ease;
@@ -502,57 +470,16 @@ input:focus, select:focus {
   min-width: 120px;
 }
 
-.btn-principal {
-  background: #e45da9;
-}
-
-.btn-secundario {
-  background: #3b3b4f;
-}
-
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: #a0aec0;
-}
-
-/* MEDIA QUERIES PARA RESPONSIVIDADE TOTAL */
-@media (max-width: 1024px) {
-  .matricula-page {
-    padding: 15px;
-  }
-}
+.btn-principal { background: #e45da9; }
+.btn-secundario { background: #3b3b4f; }
+.loading { text-align: center; padding: 40px; color: #a0aec0; }
 
 @media (max-width: 768px) {
-  .matricula-page h1 {
-    font-size: 1.2rem;
-  }
-
-  .top-actions {
-    justify-content: center;
-  }
-
-  .btn-new {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .form-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .button-group {
-    flex-direction: column;
-  }
-  
-  .button-group button {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .matricula-page {
-    padding: 10px;
-  }
+  .matricula-page h1 { font-size: 1.2rem; }
+  .top-actions { justify-content: center; }
+  .btn-new { width: 100%; justify-content: center; }
+  .form-grid { grid-template-columns: 1fr; }
+  .button-group { flex-direction: column; }
+  .button-group button { width: 100%; }
 }
 </style>

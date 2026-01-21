@@ -33,7 +33,7 @@
               <h2 class="section-title">🏫 Dados da Escola</h2>
               <div class="field">
                 <label class="custom-label">Nome da escola</label>
-                <input v-model="form.nomeEscola" type="text" required class="custom-input" placeholder="Nome da sua instituição" />
+                <input v-model="form.nomeEscola" type="text" required class="custom-input" placeholder="Nome da sua institution" />
               </div>
             </div>
 
@@ -109,6 +109,10 @@ export default {
       try {
         const response = await api.post('/ativacao', this.form)
         this.credenciais = response.data.dadosAcesso
+        
+        // Salva o nome da escola para ser usado no Dashboard
+        localStorage.setItem('nomeEscola', this.form.nomeEscola)
+        
         this.etapa = 2
       } catch (err) {
         console.error('Erro ativação:', err)
@@ -122,65 +126,53 @@ export default {
 </script>
 
 <style scoped>
-/* FUNDO DA PÁGINA */
 .activation-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #131129; /* Fundo escuro do sistema */
+  background-color: #131129;
   padding: 20px;
 }
-
 .activation-container {
   width: 100%;
-  max-width: 650px; /* Largura profissional centralizada */
+  max-width: 650px;
 }
-
 .activation-card {
-  background: #1c1a36; /* Card um pouco mais claro que o fundo */
+  background: #1c1a36;
   border-radius: 20px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
   overflow: hidden;
   border: 1px solid #2d2a4a;
 }
-
-/* HEADER */
 .card-header {
   background-color: #2563eb;
   color: white;
   padding: 30px;
   text-align: center;
 }
-
 .card-header h1 {
   font-size: 1.8rem;
   font-weight: bold;
   margin: 0;
 }
-
 .card-header p {
   opacity: 0.9;
   margin-top: 5px;
 }
-
-/* CORPO */
 .card-body {
   padding: 40px;
 }
-
 .form-container {
   display: flex;
   flex-direction: column;
   gap: 30px;
 }
-
 .form-section {
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
-
 .section-title {
   font-size: 1.1rem;
   color: #60a5fa;
@@ -188,26 +180,21 @@ export default {
   border-bottom: 1px solid #2d2a4a;
   padding-bottom: 10px;
 }
-
 .input-group {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
 }
-
-/* LABELS E INPUTS */
 .field {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-
 .custom-label {
   font-size: 1rem;
-  color: #ffffff; /* Texto branco como pedido */
+  color: #ffffff;
   font-weight: 600;
 }
-
 .custom-input {
   width: 100%;
   max-width: 100%;
@@ -219,17 +206,13 @@ export default {
   font-size: 0.95rem;
   transition: border 0.3s;
 }
-
 .custom-input:focus {
   outline: none;
   border-color: #2563eb;
 }
-
-/* TERMOS */
 .terms-section {
   padding: 10px 0;
 }
-
 .terms-label {
   display: flex;
   align-items: flex-start;
@@ -238,22 +221,18 @@ export default {
   font-size: 0.9rem;
   cursor: pointer;
 }
-
 .terms-link {
   color: #3b82f6;
   text-decoration: underline;
 }
-
-/* BOTÃO CTA PRINCIPAL */
 .actions {
   display: flex;
   justify-content: center;
   margin-top: 10px;
 }
-
 .btn-cta {
   width: 100%;
-  max-width: 400px; /* Tamanho controlado */
+  max-width: 400px;
   background: #2563eb;
   color: white;
   padding: 16px;
@@ -265,35 +244,28 @@ export default {
   transition: transform 0.2s, background 0.3s;
   text-align: center;
 }
-
 .btn-cta:hover {
   background: #1d4ed8;
   transform: translateY(-2px);
 }
-
 .btn-cta:disabled {
   background: #4b5563;
   cursor: not-allowed;
 }
-
-/* SUCESSO */
 .success-container {
   text-align: center;
   display: flex;
   flex-direction: column;
   gap: 20px;
 }
-
 .success-icon {
   font-size: 4rem;
 }
-
 .success-title {
   color: white;
   font-size: 1.5rem;
   font-weight: bold;
 }
-
 .credentials-box {
   background: #131129;
   border: 1px solid #3b82f6;
@@ -303,23 +275,18 @@ export default {
   color: white;
   margin: 10px 0;
 }
-
 .credentials-box p {
   margin: 10px 0;
   font-size: 1.1rem;
 }
-
 .link-button {
   text-decoration: none;
   display: block;
 }
-
-/* RESPONSIVIDADE */
 @media (max-width: 600px) {
   .input-group {
     grid-template-columns: 1fr;
   }
-  
   .card-body {
     padding: 20px;
   }

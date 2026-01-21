@@ -44,17 +44,17 @@
               <h2 class="section-title">3. Cadastro e Período de Avaliação</h2>
               <p>
                 O usuário deve fornecer dados válidos (Nome Completo, CPF ou CNPJ
-                e e-mail). Após a ativação, terá direito a <strong>6 dias corridos</strong> de
+                e e-mail). Após a ativação, terá direito a <strong></strong> uma
                 avaliação gratuita.
               </p>
             </section>
 
             <section>
-              <h2 class="section-title">4. Modelo de Remuneração e Taxa de Serviço</h2>
+              <h2 class="section-title">4. Modelo de Remuneração e Taxa de Serviço 0%</h2>
               <p>
-                A partir do 7º dia, será aplicada automaticamente uma taxa de
-                <strong>1,3%</strong> sobre o valor bruto das transações processadas pelo sistema,
-                via gateway integrado.
+                Não, será cobrado nem um tipo de taxa para o uso do App;
+                <strong></strong>
+                
               </p>
             </section>
 

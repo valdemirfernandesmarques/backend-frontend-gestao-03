@@ -34,7 +34,7 @@
               <ul class="policy-list">
                 <li>Ativar e identificar sua conta de acesso;</li>
                 <li>Comunicação institucional e suporte técnico;</li>
-                <li>Aplicação correta da taxa de serviço de 1,3%;</li>
+                <li>Aplicação correta da taxa de serviço que é de 0%;</li>
                 <li>Garantia da segurança e conformidade com obrigações legais.</li>
               </ul>
             </section>
@@ -58,7 +58,7 @@
               <p>
                 Para exercer seus direitos ou sanar dúvidas sobre como tratamos seus dados, entre em contato com nosso Encarregado de Proteção de Dados (DPO):
               </p>
-              <p class="dpo-email">📧 <strong>dpo@seudominio.com</strong></p>
+              <p class="dpo-email">📧 <strong>gestaoemdanca@gmail.com</strong></p>
             </section>
           </div>
         </div>

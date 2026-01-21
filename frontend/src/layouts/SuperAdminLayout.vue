@@ -16,27 +16,27 @@
           <router-link to="/super/dashboard" @click="closeSidebar"><i class="fas fa-tachometer-alt"></i> Dashboard</router-link>
         </li>
         <li :class="{ active: $route.path.includes('/alunos') }">
-          <router-link to="/super/alunos" @click="closeSidebar"><i class="fas fa-users"></i> Alunos</router-link>
+         <!--<router-link to="/super/alunos" @click="closeSidebar"><i class="fas fa-users"></i> Alunos</router-link> -->
         </li>
         <li :class="{ active: $route.path.includes('/turmas') }">
-          <router-link to="/super/turmas" @click="closeSidebar"><i class="fas fa-calendar-alt"></i> Turmas e Agenda</router-link>
+         <!-- <router-link to="/super/turmas" @click="closeSidebar"><i class="fas fa-calendar-alt"></i> Turmas e Agenda</router-link> -->
         </li>
         <li :class="{ active: $route.path.includes('/financeiro') }">
           <router-link to="/super/financeiro" @click="closeSidebar"><i class="fas fa-hand-holding-dollar"></i> Financeiro</router-link>
         </li>
         <li :class="{ active: $route.path.includes('/professores') }">
-          <router-link to="/super/professores" @click="closeSidebar"><i class="fas fa-chalkboard-teacher"></i> Professores</router-link>
+         <!-- <router-link to="/super/professores" @click="closeSidebar"><i class="fas fa-chalkboard-teacher"></i> Professores</router-link> -->
         </li>
         <li :class="{ active: $route.path.includes('/comunicacao') }">
-          <router-link to="/super/comunicacao" @click="closeSidebar"><i class="fas fa-bullhorn"></i> Comunicação</router-link>
+         <!-- <router-link to="/super/comunicacao" @click="closeSidebar"><i class="fas fa-bullhorn"></i> Comunicação</router-link> -->
         </li>
         <li :class="{ active: $route.path.includes('/relatorios') }">
-          <router-link to="/super/relatorios" @click="closeSidebar"><i class="fas fa-chart-pie"></i> Relatórios</router-link>
+         <!-- <router-link to="/super/relatorios" @click="closeSidebar"><i class="fas fa-chart-pie"></i> Relatórios</router-link> -->
         </li>
       </ul>
 
       <div class="sidebar-footer">
-        <router-link to="/super/configuracoes" @click="closeSidebar"><i class="fas fa-cog"></i> Configurações</router-link>
+       <!-- <router-link to="/super/configuracoes" @click="closeSidebar"><i class="fas fa-cog"></i> Configurações</router-link> -->
         <a href="#" @click.prevent="logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
       </div>
     </aside>

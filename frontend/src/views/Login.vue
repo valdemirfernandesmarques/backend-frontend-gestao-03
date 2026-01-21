@@ -60,10 +60,21 @@ const handleLogin = async () => {
     
     if (payload.escolaId) {
       localStorage.setItem('escolaId', payload.escolaId)
+
+      // BUSCA O NOME DA ESCOLA CADASTRADA NA ATIVAÇÃO
+      try {
+        const escolaRes = await api.get(`/escolas/${payload.escolaId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (escolaRes.data && escolaRes.data.nome) {
+          localStorage.setItem('nomeEscola', escolaRes.data.nome)
+        }
+      } catch (eError) {
+        console.error('Erro ao buscar nome da escola:', eError)
+      }
     }
 
     // 🚀 AÇÃO CRÍTICA PARA OS GRÁFICOS:
-    // Injeta o token diretamente na instância ativa do axios para a primeira requisição do Dashboard
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
     // 2. Redirecionamento seguro baseado no perfil
@@ -128,7 +139,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-/* Estilo do link Esqueci minha senha */
 .forgot-password {
   margin-top: 1rem;
 }

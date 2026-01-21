@@ -62,16 +62,18 @@
       </ul>
 
       <div class="sidebar-footer">
-        <router-link to="#" @click="closeSidebar"><i class="fas fa-cog"></i> Configurações</router-link>
         <a href="#" @click.prevent="logout"><i class="fas fa-sign-out-alt"></i> Sair</a>
       </div>
     </nav>
 
     <main class="main-content">
       <header class="main-header">
-        <h2 class="welcome-text">Seja bem-vinda, {{ userName }}!</h2>
+        <h2 class="welcome-text">Seja bem-vindo(a), {{ userName }}!</h2>
         <div class="user-profile">
-          <img src="https://i.pravatar.cc/40" alt="Foto do Usuário" />
+          <img v-if="logoUrl" :src="logoUrl" alt="Logo da Escola" class="user-avatar-img" />
+          <div v-else class="user-avatar-placeholder">
+            <i class="fas fa-user"></i>
+          </div>
         </div>
       </header>
 
@@ -90,7 +92,8 @@ import api from '../api/api'
 const BASE_URL_SERVER = 'http://localhost:3000'
 const router = useRouter()
 
-const userName = ref('Ana')
+// Puxa o nome da escola que foi salvo na ativação
+const userName = ref(localStorage.getItem('nomeEscola') || 'Escola') 
 const logoUrl = ref(null)
 const logoFileInput = ref(null)
 const isSidebarOpen = ref(false)
@@ -149,7 +152,6 @@ onMounted(() => carregarLogo())
 </script>
 
 <style scoped>
-/* ESTRUTURA BASE */
 .dashboard-container {
   display: flex;
   height: 100vh;
@@ -157,8 +159,6 @@ onMounted(() => carregarLogo())
   overflow: hidden;
   position: relative;
 }
-
-/* SIDEBAR REVISADA */
 .sidebar {
   width: 250px;
   background-color: #1a202c;
@@ -170,37 +170,31 @@ onMounted(() => carregarLogo())
   transition: all 0.3s ease;
   z-index: 1001;
 }
-
 .sidebar-header {
   padding: 20px;
   text-align: center;
   cursor: pointer;
   position: relative;
 }
-
 .logo-upload-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 }
-
 .school-logo {
   max-width: 100%;
   max-height: 115px;
   object-fit: contain;
   margin-bottom: 5px;
 }
-
 .sidebar-header h1 {
   font-size: 20px;
   line-height: 1.2;
 }
-
 .sidebar-header span {
   color: #63b3ed;
 }
-
 .upload-icon {
   position: absolute;
   top: 5px;
@@ -214,11 +208,9 @@ onMounted(() => carregarLogo())
   transition: opacity 0.2s;
   pointer-events: none;
 }
-
 .sidebar-header:hover .upload-icon {
   opacity: 1;
 }
-
 .menu {
   list-style: none;
   padding: 0;
@@ -226,7 +218,6 @@ onMounted(() => carregarLogo())
   overflow-y: auto;
   flex: 1;
 }
-
 .menu li a {
   display: flex;
   align-items: center;
@@ -236,13 +227,11 @@ onMounted(() => carregarLogo())
   transition: 0.2s;
   gap: 12px;
 }
-
 .menu li.active a, .menu li a:hover {
   background-color: #2d3748;
   color: white;
   border-left: 4px solid #63b3ed;
 }
-
 .sidebar-footer {
   padding: 15px 20px;
   display: flex;
@@ -250,7 +239,6 @@ onMounted(() => carregarLogo())
   border-top: 1px solid #2d3748;
   gap: 10px;
 }
-
 .sidebar-footer a {
   color: #a0aec0;
   text-decoration: none;
@@ -259,8 +247,6 @@ onMounted(() => carregarLogo())
   align-items: center;
   gap: 10px;
 }
-
-/* CONTEÚDO PRINCIPAL */
 .main-content {
   flex: 1;
   background-color: #131129;
@@ -269,7 +255,6 @@ onMounted(() => carregarLogo())
   flex-direction: column;
   min-width: 0;
 }
-
 .main-header {
   display: flex;
   justify-content: space-between;
@@ -280,25 +265,34 @@ onMounted(() => carregarLogo())
   border-bottom: 1px solid #2d3748;
   flex-shrink: 0;
 }
-
 .welcome-text {
   color: white;
   font-size: 1.1rem;
   margin: 0;
 }
-
-.user-profile img {
+/* Estilo do avatar circular usando o logo */
+.user-avatar-img {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: 2px solid #63b3ed;
+  object-fit: cover;
 }
-
+.user-avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #2d3748;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  border: 2px solid #63b3ed;
+}
 .page-content {
   padding: 20px;
   flex: 1;
 }
-
-/* --- RESPONSIVIDADE (MEDIA QUERIES) --- */
-
 .mobile-menu-toggle {
   display: none;
   position: fixed;
@@ -313,23 +307,19 @@ onMounted(() => carregarLogo())
   cursor: pointer;
   box-shadow: 0 2px 10px rgba(0,0,0,0.4);
 }
-
 @media (max-width: 1024px) {
   .mobile-menu-toggle {
     display: block;
   }
-
   .sidebar {
     position: fixed;
     left: -250px;
     top: 0;
     bottom: 0;
   }
-
   .sidebar.sidebar-open {
     left: 0;
   }
-
   .sidebar-overlay {
     position: fixed;
     top: 0;
@@ -339,25 +329,20 @@ onMounted(() => carregarLogo())
     background: rgba(0, 0, 0, 0.7);
     z-index: 1000;
   }
-
   .main-header {
     padding-left: 75px;
   }
-
   .welcome-text {
     font-size: 0.9rem;
   }
 }
-
 @media (max-width: 480px) {
   .welcome-text {
     display: none;
   }
-  
   .main-header {
     justify-content: flex-end;
   }
-
   .page-content {
     padding: 10px;
   }
