@@ -1,6 +1,6 @@
-// backend/models/Escola.js
+// backend/models/escola.js
 module.exports = (sequelize, DataTypes) => {
-  const Escola = sequelize.define('Escola', {
+  const escola = sequelize.define('escola', {
     nome: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -16,16 +16,16 @@ module.exports = (sequelize, DataTypes) => {
     }
   });
 
-  Escola.associate = (models) => {
-    Escola.hasMany(models.Matricula, {
+  escola.associate = (models) => {
+    escola.hasMany(models.Matricula, {
       foreignKey: 'escolaId',
       as: 'matriculas',
     });
-    Escola.hasMany(models.User, {
+    escola.hasMany(models.User, {
       foreignKey: 'escolaId',
       as: 'usuarios',
     });
   };
 
-  return Escola;
+  return escola;
 };
