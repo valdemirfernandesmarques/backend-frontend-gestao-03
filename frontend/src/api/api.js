@@ -1,14 +1,12 @@
-// arquivo: src/api/api.js
 import axios from 'axios';
 
 const api = axios.create({
-  // Usa variável de ambiente ou o próprio host para não quebrar em produção/rede local
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
- //baseURL: import.meta.env.VITE_API_URL || 'http://192.168.100.248:3000/api',
+  // URL do seu Backend no Render (Sempre use o link que termina em .onrender.com)
+  baseURL: 'https://backend-frontend-gestao-03.onrender.com/api',
   timeout: 10000,
 });
 
-// 🔐 Interceptor Dinâmico: Pega o token atualizado a cada requisição
+// 🔐 Interceptor Dinâmico: Pega o token atualizado a cada requisição para segurança
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -20,14 +18,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🛡️ Interceptor de Resposta: Se der 401, força logout para evitar estado inconsistente
+// 🛡️ Interceptor de Resposta: Se o acesso expirar (erro 401), limpa os dados
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.clear();
-      // Não redirecionamos aqui para não quebrar fluxos específicos, 
-      // mas limpamos os dados para segurança.
+      // Opcional: window.location.href = '/login'; 
     }
     return Promise.reject(error);
   }
