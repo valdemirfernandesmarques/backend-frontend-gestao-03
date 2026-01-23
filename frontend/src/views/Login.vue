@@ -18,6 +18,11 @@
           {{ loading ? 'Entrando...' : 'Entrar' }}
         </button>
 
+        <div class="signup-link">
+          <span>Não tem uma conta? </span>
+          <router-link to="/ativacao" class="link-text">Inscrever-se</router-link>
+        </div>
+
         <div class="forgot-password">
           <router-link to="/forgot-password">Esqueci minha senha</router-link>
         </div>
@@ -139,6 +144,21 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Estilos do Link de Inscrição sem alterar cores originais */
+.signup-link {
+  margin-top: 15px;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+.link-text {
+  color: #ff3c78;
+  text-decoration: none;
+  font-weight: bold;
+}
+.link-text:hover {
+  text-decoration: underline;
+}
+
 .forgot-password {
   margin-top: 1rem;
 }
@@ -155,5 +175,13 @@ button:disabled {
 .error {
   margin-top: 10px;
   color: #ff6b81;
+}
+
+/* Responsividade Básica */
+@media (max-width: 480px) {
+  .login-box {
+    width: 90%;
+    padding: 1.5rem;
+  }
 }
 </style>

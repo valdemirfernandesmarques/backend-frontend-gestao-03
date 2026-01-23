@@ -1,9 +1,11 @@
+// arquivo: src/api/api.js
 import axios from 'axios';
 
 const api = axios.create({
-  // URL do seu Backend no Render (Sempre use o link que termina em .onrender.com)
+  // URL oficial do seu Backend no Render
+  // Substituído 'http://localhost:3000/api' pelo link de produção
   baseURL: 'https://backend-frontend-gestao-03.onrender.com/api',
-  timeout: 10000,
+  timeout: 15000, // Aumentado para 15s para dar tempo do Render gratuito "acordar"
 });
 
 // 🔐 Interceptor Dinâmico: Pega o token atualizado a cada requisição para segurança
@@ -18,13 +20,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🛡️ Interceptor de Resposta: Se o acesso expirar (erro 401), limpa os dados
+// 🛡️ Interceptor de Resposta: Se o acesso expirar (erro 401), limpa os dados para segurança
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.clear();
-      // Opcional: window.location.href = '/login'; 
+      // Limpa o estado para evitar erros de autenticação inconsistentes
     }
     return Promise.reject(error);
   }

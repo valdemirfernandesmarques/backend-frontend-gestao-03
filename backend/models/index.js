@@ -1,4 +1,3 @@
-// backend/models/index.js
 const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
@@ -30,41 +29,39 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 // ===============================
-// MODELS
+// MODELS (Corrigidos para minúsculo conforme padrão Linux/Render)
 // ===============================
-db.Escola = require("./Escola")(sequelize, DataTypes);
-db.User = require("./User")(sequelize, DataTypes);
+db.Escola = require("./escola")(sequelize, DataTypes);
+db.User = require("./user")(sequelize, DataTypes);
+db.PasswordResetToken = require("./passwordResetToken")(sequelize, DataTypes);
 
-// 🔐 RECUPERAÇÃO DE SENHA (ESTAVA FALTANDO)
-db.PasswordResetToken = require("./PasswordResetToken")(sequelize, DataTypes);
+db.Aluno = require("./aluno")(sequelize, DataTypes);
+db.Professor = require("./professor")(sequelize, DataTypes);
+db.Funcionario = require("./funcionario")(sequelize, DataTypes);
 
-db.Aluno = require("./Aluno")(sequelize, DataTypes);
-db.Professor = require("./Professor")(sequelize, DataTypes);
-db.Funcionario = require("./Funcionario")(sequelize, DataTypes);
+db.Modalidade = require("./modalidade")(sequelize, DataTypes);
+db.Turma = require("./turma")(sequelize, DataTypes);
 
-db.Modalidade = require("./Modalidade")(sequelize, DataTypes);
-db.Turma = require("./Turma")(sequelize, DataTypes);
+db.Matricula = require("./matricula")(sequelize, DataTypes);
+db.Mensalidade = require("./mensalidade")(sequelize, DataTypes);
 
-db.Matricula = require("./Matricula")(sequelize, DataTypes);
-db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
-
-db.Pagamento = require("./Pagamento")(sequelize, DataTypes);
+db.Pagamento = require("./pagamento")(sequelize, DataTypes);
 
 // FINANCEIRO
-db.LancamentoFinanceiro = require("./LancamentoFinanceiro")(sequelize, DataTypes);
-db.Comissao = require("./Comissao")(sequelize, DataTypes);
+db.LancamentoFinanceiro = require("./lancamentoFinanceiro")(sequelize, DataTypes);
+db.Comissao = require("./comissao")(sequelize, DataTypes);
 
 // VENDAS
-db.Produto = require("./Produto")(sequelize, DataTypes);
-db.Venda = require("./Venda")(sequelize, DataTypes);
-db.VendaItem = require("./VendaItem")(sequelize, DataTypes);
+db.Produto = require("./produto")(sequelize, DataTypes);
+db.Venda = require("./venda")(sequelize, DataTypes);
+db.VendaItem = require("./vendaItem")(sequelize, DataTypes);
 
 // RELAÇÕES
-db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
+db.ProfessorModalidade = require("./professorModalidade")(sequelize, DataTypes);
 
 // SUPER_ADMIN
-db.IsencaoTaxa = require("./IsencaoTaxa")(sequelize, DataTypes);
-db.TransacaoFinanceira = require("./TransacaoFinanceira")(sequelize, DataTypes);
+db.IsencaoTaxa = require("./isencaoTaxa")(sequelize, DataTypes);
+db.TransacaoFinanceira = require("./transacaoFinanceira")(sequelize, DataTypes);
 
 // ===============================
 // ASSOCIAÇÕES
