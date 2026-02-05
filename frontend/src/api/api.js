@@ -3,8 +3,8 @@ import axios from 'axios';
 
 const api = axios.create({
   // Usa variável de ambiente ou o próprio host para não quebrar em produção/rede local
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000/api',
- //baseURL: import.meta.env.VITE_API_URL || 'http://192.168.100.248:3000/api',
+baseURL: import.meta.env.VITE_API_URL || 'http://192.168.100.248:3000/api',
+//baseURL: import.meta.env.VITE_API_URL || 'https://5d7078bd318c00.lhr.life'
   timeout: 10000,
 });
 
