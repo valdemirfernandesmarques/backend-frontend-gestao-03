@@ -11,11 +11,10 @@ const sequelize = new Sequelize(
   process.env.DB_PASS !== undefined ? process.env.DB_PASS : "",
   {
     host: process.env.DB_HOST || "127.0.0.1",
-    port: process.env.DB_PORT || 3306, // Usa a porta do Aiven se disponível
+    port: process.env.DB_PORT || 3306,
     dialect: "mysql",
     logging: false,
     timezone: "-03:00",
-    // OBRIGATÓRIO PARA AIVEN E BANCOS EM NUVEM
     dialectOptions: {
       ssl: {
         rejectUnauthorized: false
@@ -29,50 +28,32 @@ sequelize
   .then(() => console.log("Conexão com MySQL OK!"))
   .catch((err) => console.error("Erro de conexão no Sequelize:", err));
 
-// ===============================
-// OBJETO DB
-// ===============================
 const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 // ===============================
-// MODELS
+// MODELS (Caminhos em minúsculo para compatibilidade com Linux)
 // ===============================
-// ATENÇÃO: Verifique se os nomes dos arquivos na pasta models iniciam com Letra Maiúscula
-db.Escola = require("./Escola")(sequelize, DataTypes);
-db.User = require("./User")(sequelize, DataTypes);
-
-// 🔐 RECUPERAÇÃO DE SENHA
-db.PasswordResetToken = require("./PasswordResetToken")(sequelize, DataTypes);
-
-db.Aluno = require("./Aluno")(sequelize, DataTypes);
-db.Professor = require("./Professor")(sequelize, DataTypes);
-db.Funcionario = require("./Funcionario")(sequelize, DataTypes);
-
-db.Modalidade = require("./Modalidade")(sequelize, DataTypes);
-db.Turma = require("./Turma")(sequelize, DataTypes);
-
-db.Matricula = require("./Matricula")(sequelize, DataTypes);
-db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
-
-db.Pagamento = require("./Pagamento")(sequelize, DataTypes);
-
-// FINANCEIRO
-db.LancamentoFinanceiro = require("./LancamentoFinanceiro")(sequelize, DataTypes);
-db.Comissao = require("./Comissao")(sequelize, DataTypes);
-
-// VENDAS
-db.Produto = require("./Produto")(sequelize, DataTypes);
-db.Venda = require("./Venda")(sequelize, DataTypes);
-db.VendaItem = require("./VendaItem")(sequelize, DataTypes);
-
-// RELAÇÕES
-db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
-
-// SUPER_ADMIN
-db.IsencaoTaxa = require("./IsencaoTaxa")(sequelize, DataTypes);
-db.TransacaoFinanceira = require("./TransacaoFinanceira")(sequelize, DataTypes);
+db.Escola = require("./escola")(sequelize, DataTypes);
+db.User = require("./user")(sequelize, DataTypes);
+db.PasswordResetToken = require("./passwordresettoken")(sequelize, DataTypes);
+db.Aluno = require("./aluno")(sequelize, DataTypes);
+db.Professor = require("./professor")(sequelize, DataTypes);
+db.Funcionario = require("./funcionario")(sequelize, DataTypes);
+db.Modalidade = require("./modalidade")(sequelize, DataTypes);
+db.Turma = require("./turma")(sequelize, DataTypes);
+db.Matricula = require("./matricula")(sequelize, DataTypes);
+db.Mensalidade = require("./mensalidade")(sequelize, DataTypes);
+db.Pagamento = require("./pagamento")(sequelize, DataTypes);
+db.LancamentoFinanceiro = require("./lancamentofinanceiro")(sequelize, DataTypes);
+db.Comissao = require("./comissao")(sequelize, DataTypes);
+db.Produto = require("./produto")(sequelize, DataTypes);
+db.Venda = require("./venda")(sequelize, DataTypes);
+db.VendaItem = require("./vendaitem")(sequelize, DataTypes);
+db.ProfessorModalidade = require("./professormodalidade")(sequelize, DataTypes);
+db.IsencaoTaxa = require("./isencaotaxa")(sequelize, DataTypes);
+db.TransacaoFinanceira = require("./transacaofinanceira")(sequelize, DataTypes);
 
 // ===============================
 // ASSOCIAÇÕES
