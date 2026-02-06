@@ -1,13 +1,13 @@
-// arquivo: src/api/api.js
+// src/api/api.js
 import axios from 'axios';
 
 const api = axios.create({
-  // Atualizado para o novo link do Render que está funcionando
+  // URL oficial do seu backend no Render
   baseURL: 'https://api-gestao-danca.onrender.com/api',
-  timeout: 30000, // Aumentado para 30s pois o Render gratuito "dorme" e demora a responder na primeira vez
+  timeout: 30000, 
 });
 
-// 🔐 Interceptor Dinâmico: Pega o token atualizado a cada requisição
+// Interceptor para o Token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -19,14 +19,13 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🛡️ Interceptor de Resposta: Se der 401, força logout
+// Interceptor para Logout em caso de erro 401
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.clear();
-      // Descomente a linha abaixo se quiser que ele redirecione para o login automaticamente
-      // window.location.href = '/login'; 
+      window.location.href = '/login'; 
     }
     return Promise.reject(error);
   }
