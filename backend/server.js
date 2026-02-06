@@ -7,12 +7,10 @@ require("dotenv").config();
 
 const app = express();
 
-// Middlewares
 app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// Definição das Rotas
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/alunos", require("./routes/alunoRoutes"));
@@ -24,7 +22,6 @@ app.use("/api/financeiro", require("./routes/financeiroRoutes"));
 app.use("/api/turmas", require("./routes/turmaRoutes"));
 app.use("/api/matriculas", require("./routes/matriculaRoutes"));
 
-// Função para garantir usuário Admin
 async function criarSuperAdmin() {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || "valdemir.marques1925@gmail.com";
@@ -49,9 +46,8 @@ async function criarSuperAdmin() {
 
 const PORT = process.env.PORT || 10000;
 
-// Sincronização e Start do Servidor
 if (db.sequelize) {
-  // ATENÇÃO: force: true apaga as tabelas e recria do zero para corrigir o erro de constraint
+  // force: true para reconstruir as tabelas na ordem certa definida no index.js
   db.sequelize.sync({ force: true }).then(async () => {
     console.log("🎯 BANCO REESTRUTURADO E SINCRONIZADO COM SUCESSO!");
     await criarSuperAdmin();
@@ -61,7 +57,7 @@ if (db.sequelize) {
   }).catch(err => {
     console.error("❌ Erro ao sincronizar banco:", err.message);
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Servidor rodando na porta ${PORT} (Erro Crítico no Banco)`);
+      console.log(`🚀 Servidor rodando na porta ${PORT} (Aviso: Falha na sincronização)`);
     });
   });
 }

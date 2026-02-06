@@ -2,20 +2,13 @@
 const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
-// Usando variáveis de ambiente para segurança total
-const db_name = process.env.DB_NAME || "defaultdb";
-const db_user = process.env.DB_USER || "avnadmin";
-const db_host = process.env.DB_HOST || "banco-gestao-gestaoemdanca.j.aivencloud.com";
-const db_port = process.env.DB_PORT || 13908;
-const db_pass = process.env.DB_PASS; 
-
 const sequelize = new Sequelize(
-  db_name,
-  db_user,
-  db_pass,
+  process.env.DB_NAME || "defaultdb",
+  process.env.DB_USER || "avnadmin",
+  process.env.DB_PASS, 
   {
-    host: db_host,
-    port: db_port,
+    host: process.env.DB_HOST || "banco-gestao-gestaoemdanca.j.aivencloud.com",
+    port: process.env.DB_PORT || 13908,
     dialect: "mysql",
     logging: false,
     timezone: "-03:00",
@@ -44,27 +37,31 @@ const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// Importação Completa dos Modelos
-db.Escola = require("./escola")(sequelize, DataTypes);
+// CARREGAMENTO EM ORDEM DE DEPENDÊNCIA (Importante!)
+// 1. Tabelas Base
 db.User = require("./user")(sequelize, DataTypes);
-db.PasswordResetToken = require("./passwordresettoken")(sequelize, DataTypes);
-db.Aluno = require("./aluno")(sequelize, DataTypes);
+db.Escola = require("./escola")(sequelize, DataTypes);
 db.Professor = require("./professor")(sequelize, DataTypes);
+db.Aluno = require("./aluno")(sequelize, DataTypes);
 db.Funcionario = require("./funcionario")(sequelize, DataTypes);
 db.Modalidade = require("./modalidade")(sequelize, DataTypes);
+db.Produto = require("./produto")(sequelize, DataTypes);
+
+// 2. Tabelas que dependem das bases
+db.PasswordResetToken = require("./passwordresettoken")(sequelize, DataTypes);
 db.Turma = require("./turma")(sequelize, DataTypes);
 db.Matricula = require("./matricula")(sequelize, DataTypes);
 db.Mensalidade = require("./mensalidade")(sequelize, DataTypes);
 db.Pagamento = require("./pagamento")(sequelize, DataTypes);
 db.LancamentoFinanceiro = require("./lancamentofinanceiro")(sequelize, DataTypes);
 db.Comissao = require("./comissao")(sequelize, DataTypes);
-db.Produto = require("./produto")(sequelize, DataTypes);
 db.Venda = require("./venda")(sequelize, DataTypes);
 db.VendaItem = require("./vendaitem")(sequelize, DataTypes);
 db.ProfessorModalidade = require("./professormodalidade")(sequelize, DataTypes);
 db.IsencaoTaxa = require("./isencaotaxa")(sequelize, DataTypes);
 db.TransacaoFinanceira = require("./transacaofinanceira")(sequelize, DataTypes);
 
+// Executa as associações
 Object.keys(db).forEach((modelName) => {
   if (db[modelName] && db[modelName].associate) {
     db[modelName].associate(db);
