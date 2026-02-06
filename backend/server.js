@@ -1,4 +1,3 @@
-// backend/server.js
 const express = require("express");
 const cors = require("cors");
 const db = require("./models");
@@ -7,7 +6,6 @@ require("dotenv").config();
 
 const app = express();
 
-// Configuração de CORS atualizada para permitir o seu Frontend local acessar o Render
 app.use(cors({ 
   origin: ["http://localhost:5173", "http://127.0.0.1:5173"], 
   methods: ["GET", "POST", "PUT", "DELETE"],
@@ -17,12 +15,11 @@ app.use(cors({
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// Rota de teste para confirmar que a API está viva
 app.get("/", (req, res) => {
   res.send("🚀 API Gestão em Dança está online e operante!");
 });
 
-// Rotas da API
+// Rotas
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/alunos", require("./routes/alunoRoutes"));
@@ -42,20 +39,17 @@ async function criarSuperAdmin() {
     if (!existente) {
       const hash = await bcrypt.hash(adminPass, 10);
       await db.User.create({ 
-        nome: "Super Admin", 
-        email: adminEmail, 
-        password: hash, 
-        perfil: "SUPER_ADMIN" 
+        nome: "Super Admin", email: adminEmail, password: hash, perfil: "SUPER_ADMIN" 
       });
-      console.log("✅ Super Admin verificado/criado");
+      console.log("✅ Super Admin criado/verificado com sucesso");
     }
-  } catch (e) { console.error("Erro ao verificar Admin:", e.message); }
+  } catch (e) { console.error("Erro Admin:", e.message); }
 }
 
 const PORT = process.env.PORT || 10000;
 
 if (db.sequelize) {
-  // force: false para NÃO APAGAR os dados que você importar do SQL
+  // force: false IMPORTANTE para não apagar o seu backup depois de importar
   db.sequelize.sync({ force: false }).then(async () => {
     console.log("🎯 Conectado ao banco com sucesso (Modo Produção)");
     await criarSuperAdmin();
@@ -63,8 +57,7 @@ if (db.sequelize) {
       console.log(`🚀 Servidor online na porta ${PORT}`);
     });
   }).catch(err => {
-    console.error("❌ Erro fatal de sincronização:", err.message);
-    // Tenta subir o servidor mesmo com erro no banco para diagnóstico
+    console.error("❌ Erro fatal:", err.message);
     app.listen(PORT, "0.0.0.0");
   });
 }

@@ -1,4 +1,3 @@
-// backend/models/index.js
 const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
@@ -21,7 +20,7 @@ const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// Mapeamento exato conforme o arquivo gestao_danca.sql
+// Mapeamento das tabelas conforme seu arquivo SQL (nomes minúsculos)
 db.User = require("./user")(sequelize, DataTypes);
 db.User.options.tableName = 'users';
 
