@@ -1,4 +1,4 @@
-// backend/models/Professor.js
+// backend/models/professor.js
 module.exports = (sequelize, DataTypes) => {
   const Professor = sequelize.define('Professor', {
     nome: { type: DataTypes.STRING, allowNull: false },
@@ -9,20 +9,24 @@ module.exports = (sequelize, DataTypes) => {
     vinculo: { type: DataTypes.ENUM('CLT', 'Autônomo', 'Comissão'), allowNull: false },
     ativo: { type: DataTypes.BOOLEAN, defaultValue: true }
   }, {
-    // ✅ CORRIGIDO: Diz ao Sequelize o nome exato da tabela no banco (no singular)
-    tableName: 'professor',
+    // ✅ PADRONIZADO: Nome exato esperado pelas chaves estrangeiras
+    tableName: 'Professors',
     timestamps: true
   });
 
   Professor.associate = (models) => {
-    Professor.belongsTo(models.Escola, { foreignKey: 'escolaId', as: 'escola', allowNull: false });
+    // Um professor pertence a uma escola
+    Professor.belongsTo(models.Escola, { foreignKey: 'escolaId', as: 'escola' });
     
-    // A relação Muitos-para-Muitos com Modalidade já está correta
+    // Relação com Modalidades
     Professor.belongsToMany(models.Modalidade, {
       through: models.ProfessorModalidade,
       foreignKey: 'professorId',
       as: 'modalidades'
     });
+
+    // Relação com Comissões
+    Professor.hasMany(models.Comissao, { foreignKey: 'professorId', as: 'comissoes' });
   };
 
   return Professor;

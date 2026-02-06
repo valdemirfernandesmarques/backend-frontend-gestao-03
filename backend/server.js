@@ -6,12 +6,11 @@ const bcrypt = require("bcryptjs");
 require("dotenv").config();
 
 const app = express();
-
 app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// Rotas
+// Rotas principais
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/alunos", require("./routes/alunoRoutes"));
@@ -48,7 +47,7 @@ async function criarSuperAdmin() {
 const PORT = process.env.PORT || 10000;
 
 if (db.sequelize) {
-  // force: true para reconstruir as tabelas na ordem correta
+  // force: true para reconstruir tudo com os nomes de tabela corrigidos
   db.sequelize.sync({ force: true }).then(async () => {
     console.log("🎯 BANCO REESTRUTURADO E SINCRONIZADO COM SUCESSO!");
     await criarSuperAdmin();
@@ -58,7 +57,7 @@ if (db.sequelize) {
   }).catch(err => {
     console.error("❌ Erro fatal na sincronização:", err.message);
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Servidor rodando (Porta ${PORT}) - Verifique o log acima`);
+      console.log(`🚀 Servidor rodando (Porta ${PORT}) - Verifique o log`);
     });
   });
 }

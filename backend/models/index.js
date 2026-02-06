@@ -12,56 +12,38 @@ const sequelize = new Sequelize(
     dialect: "mysql",
     logging: false,
     timezone: "-03:00",
-    pool: {
-      max: 5,
-      min: 0,
-      acquire: 30000,
-      idle: 10000
-    },
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false
-      }
-    }
+    pool: { max: 5, min: 0, acquire: 30000, idle: 10000 },
+    dialectOptions: { ssl: { require: true, rejectUnauthorized: false } }
   }
 );
-
-sequelize.authenticate()
-  .then(() => console.log("🎯 CONECTADO AO BANCO COM SUCESSO!"))
-  .catch(err => {
-    console.log("❌ Erro de conexão física:", err.message);
-  });
 
 const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// ORDEM DE CARREGAMENTO MANUAL PARA EVITAR ERRO DE REFERÊNCIA
-// 1. Modelos Base (Sem dependências)
+// ✅ ORDEM DE CARREGAMENTO MANUAL (Hierarquia correta)
 db.User = require("./user")(sequelize, DataTypes);
-db.Escola = require("./escola")(sequelize, DataTypes);
-db.Professor = require("./professor")(sequelize, DataTypes);
+db.Escola = require("./escola")(sequelize, DataTypes); // Escola primeiro
+db.Professor = require("./professor")(sequelize, DataTypes); // Professor depois da Escola
 db.Aluno = require("./aluno")(sequelize, DataTypes);
 db.Funcionario = require("./funcionario")(sequelize, DataTypes);
 db.Modalidade = require("./modalidade")(sequelize, DataTypes);
 db.Produto = require("./produto")(sequelize, DataTypes);
 
-// 2. Modelos que dependem dos modelos acima (Chaves Estrangeiras)
+// Tabelas que dependem das anteriores
 db.PasswordResetToken = require("./passwordresettoken")(sequelize, DataTypes);
 db.Turma = require("./turma")(sequelize, DataTypes);
 db.Matricula = require("./matricula")(sequelize, DataTypes);
 db.Mensalidade = require("./mensalidade")(sequelize, DataTypes);
 db.Pagamento = require("./pagamento")(sequelize, DataTypes);
 db.LancamentoFinanceiro = require("./lancamentofinanceiro")(sequelize, DataTypes);
-db.Comissao = require("./comissao")(sequelize, DataTypes);
+db.Comissao = require("./comissao")(sequelize, DataTypes); // Depende de Professor e Pagamento
 db.Venda = require("./venda")(sequelize, DataTypes);
 db.VendaItem = require("./vendaitem")(sequelize, DataTypes);
 db.ProfessorModalidade = require("./professormodalidade")(sequelize, DataTypes);
 db.IsencaoTaxa = require("./isencaotaxa")(sequelize, DataTypes);
 db.TransacaoFinanceira = require("./transacaofinanceira")(sequelize, DataTypes);
 
-// Executa as associações
 Object.keys(db).forEach((modelName) => {
   if (db[modelName] && db[modelName].associate) {
     db[modelName].associate(db);
