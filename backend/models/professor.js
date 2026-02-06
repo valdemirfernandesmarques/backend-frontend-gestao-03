@@ -9,24 +9,17 @@ module.exports = (sequelize, DataTypes) => {
     vinculo: { type: DataTypes.ENUM('CLT', 'Autônomo', 'Comissão'), allowNull: false },
     ativo: { type: DataTypes.BOOLEAN, defaultValue: true }
   }, {
-    // ✅ PADRONIZADO: Nome exato esperado pelas chaves estrangeiras
     tableName: 'Professors',
     timestamps: true
   });
 
   Professor.associate = (models) => {
-    // Um professor pertence a uma escola
     Professor.belongsTo(models.Escola, { foreignKey: 'escolaId', as: 'escola' });
-    
-    // Relação com Modalidades
     Professor.belongsToMany(models.Modalidade, {
       through: models.ProfessorModalidade,
       foreignKey: 'professorId',
       as: 'modalidades'
     });
-
-    // Relação com Comissões
-    Professor.hasMany(models.Comissao, { foreignKey: 'professorId', as: 'comissoes' });
   };
 
   return Professor;

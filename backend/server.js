@@ -10,7 +10,6 @@ app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// Rotas principais
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/alunos", require("./routes/alunoRoutes"));
@@ -26,40 +25,39 @@ async function criarSuperAdmin() {
   try {
     const adminEmail = process.env.ADMIN_EMAIL || "valdemir.marques1925@gmail.com";
     const adminPass = process.env.ADMIN_PASS || "Gestao@danca202558";
-    if (db.User) {
-      const existente = await db.User.findOne({ where: { email: adminEmail } });
-      if (!existente) {
-        const hash = await bcrypt.hash(adminPass, 10);
-        await db.User.create({ 
-          nome: "Super Admin", 
-          email: adminEmail, 
-          password: hash, 
-          perfil: "SUPER_ADMIN" 
-        });
-        console.log("✅ Super Admin criado com sucesso");
-      }
+    const existente = await db.User.findOne({ where: { email: adminEmail } });
+    if (!existente) {
+      const hash = await bcrypt.hash(adminPass, 10);
+      await db.User.create({ nome: "Super Admin", email: adminEmail, password: hash, perfil: "SUPER_ADMIN" });
+      console.log("✅ Super Admin criado");
     }
-  } catch (e) {
-    console.error("Erro no SuperAdmin:", e.message);
-  }
+  } catch (e) { console.error("Admin:", e.message); }
 }
 
 const PORT = process.env.PORT || 10000;
 
 if (db.sequelize) {
-  // force: true para reconstruir tudo com os nomes de tabela corrigidos
-  db.sequelize.sync({ force: true }).then(async () => {
-    console.log("🎯 BANCO REESTRUTURADO E SINCRONIZADO COM SUCESSO!");
-    await criarSuperAdmin();
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Servidor online na porta ${PORT}`);
+  // 1. Desativa verificações para limpar o lixo do banco
+  db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0')
+    .then(() => {
+      // 2. Força a sincronização
+      return db.sequelize.sync({ force: true });
+    })
+    .then(() => {
+      // 3. Reativa as verificações
+      return db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    })
+    .then(async () => {
+      console.log("🎯 BANCO RESETADO E CORRIGIDO COM SUCESSO!");
+      await criarSuperAdmin();
+      app.listen(PORT, "0.0.0.0", () => {
+        console.log(`🚀 Servidor rodando na porta ${PORT}`);
+      });
+    })
+    .catch(err => {
+      console.error("❌ Erro:", err.message);
+      app.listen(PORT, "0.0.0.0");
     });
-  }).catch(err => {
-    console.error("❌ Erro fatal na sincronização:", err.message);
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Servidor rodando (Porta ${PORT}) - Verifique o log`);
-    });
-  });
 }
 
 module.exports = app;
