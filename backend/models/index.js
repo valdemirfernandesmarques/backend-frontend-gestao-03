@@ -11,16 +11,23 @@ const sequelize = new Sequelize(
   process.env.DB_PASS !== undefined ? process.env.DB_PASS : "",
   {
     host: process.env.DB_HOST || "127.0.0.1",
+    port: process.env.DB_PORT || 3306, // Usa a porta do Aiven se disponível
     dialect: "mysql",
     logging: false,
     timezone: "-03:00",
+    // OBRIGATÓRIO PARA AIVEN E BANCOS EM NUVEM
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: false
+      }
+    }
   }
 );
 
 sequelize
   .authenticate()
   .then(() => console.log("Conexão com MySQL OK!"))
-  .catch((err) => console.error("Erro de conexão:", err));
+  .catch((err) => console.error("Erro de conexão no Sequelize:", err));
 
 // ===============================
 // OBJETO DB
@@ -32,10 +39,11 @@ db.Sequelize = Sequelize;
 // ===============================
 // MODELS
 // ===============================
+// ATENÇÃO: Verifique se os nomes dos arquivos na pasta models iniciam com Letra Maiúscula
 db.Escola = require("./Escola")(sequelize, DataTypes);
 db.User = require("./User")(sequelize, DataTypes);
 
-// 🔐 RECUPERAÇÃO DE SENHA (ESTAVA FALTANDO)
+// 🔐 RECUPERAÇÃO DE SENHA
 db.PasswordResetToken = require("./PasswordResetToken")(sequelize, DataTypes);
 
 db.Aluno = require("./Aluno")(sequelize, DataTypes);
