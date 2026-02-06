@@ -8,7 +8,7 @@ const sequelize = new Sequelize(
   process.env.DB_PASS, 
   {
     host: process.env.DB_HOST || "banco-gestao-gestaoemdanca.j.aivencloud.com",
-    port: process.env.DB_PORT || 13908,
+    port: 13908,
     dialect: "mysql",
     logging: false,
     timezone: "-03:00",
@@ -30,15 +30,15 @@ const sequelize = new Sequelize(
 sequelize.authenticate()
   .then(() => console.log("🎯 CONECTADO AO BANCO COM SUCESSO!"))
   .catch(err => {
-    console.log("❌ Erro de conexão:", err.message);
+    console.log("❌ Erro de conexão física:", err.message);
   });
 
 const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// CARREGAMENTO EM ORDEM DE DEPENDÊNCIA (Importante!)
-// 1. Tabelas Base
+// CARREGAMENTO EM ORDEM HIERÁRQUICA PARA EVITAR ERRO DE REFERÊNCIA
+// 1. Modelos Base (Independentes)
 db.User = require("./user")(sequelize, DataTypes);
 db.Escola = require("./escola")(sequelize, DataTypes);
 db.Professor = require("./professor")(sequelize, DataTypes);
@@ -47,7 +47,7 @@ db.Funcionario = require("./funcionario")(sequelize, DataTypes);
 db.Modalidade = require("./modalidade")(sequelize, DataTypes);
 db.Produto = require("./produto")(sequelize, DataTypes);
 
-// 2. Tabelas que dependem das bases
+// 2. Modelos Dependentes (Possuem Chaves Estrangeiras)
 db.PasswordResetToken = require("./passwordresettoken")(sequelize, DataTypes);
 db.Turma = require("./turma")(sequelize, DataTypes);
 db.Matricula = require("./matricula")(sequelize, DataTypes);

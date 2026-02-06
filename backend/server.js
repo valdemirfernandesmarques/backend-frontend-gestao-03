@@ -11,6 +11,7 @@ app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
+// Rotas
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/alunos", require("./routes/alunoRoutes"));
@@ -36,28 +37,28 @@ async function criarSuperAdmin() {
           password: hash, 
           perfil: "SUPER_ADMIN" 
         });
-        console.log("✅ Super Admin verificado/criado");
+        console.log("✅ Super Admin criado com sucesso");
       }
     }
   } catch (e) {
-    console.error("Erro ao criar Admin:", e.message);
+    console.error("Erro no SuperAdmin:", e.message);
   }
 }
 
 const PORT = process.env.PORT || 10000;
 
 if (db.sequelize) {
-  // force: true para reconstruir as tabelas na ordem certa definida no index.js
+  // force: true para limpar o erro de constraint e recriar na ordem correta
   db.sequelize.sync({ force: true }).then(async () => {
     console.log("🎯 BANCO REESTRUTURADO E SINCRONIZADO COM SUCESSO!");
     await criarSuperAdmin();
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Servidor rodando na porta ${PORT}`);
+      console.log(`🚀 Servidor online na porta ${PORT}`);
     });
   }).catch(err => {
-    console.error("❌ Erro ao sincronizar banco:", err.message);
+    console.error("❌ Erro fatal na sincronização:", err.message);
     app.listen(PORT, "0.0.0.0", () => {
-      console.log(`🚀 Servidor rodando na porta ${PORT} (Aviso: Falha na sincronização)`);
+      console.log(`🚀 Servidor rodando em modo de segurança (Porta ${PORT})`);
     });
   });
 }
