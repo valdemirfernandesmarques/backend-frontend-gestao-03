@@ -2,36 +2,49 @@
 const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
+// Usando variáveis de ambiente para segurança total
+const db_name = process.env.DB_NAME || "defaultdb";
+const db_user = process.env.DB_USER || "avnadmin";
+const db_host = process.env.DB_HOST || "banco-gestao-gestaoemdanca.j.aivencloud.com";
+const db_port = process.env.DB_PORT || 13908;
+const db_pass = process.env.DB_PASS; 
+
 const sequelize = new Sequelize(
-  process.env.DB_NAME || "gestao_danca",
-  process.env.DB_USER || "root",
-  process.env.DB_PASS !== undefined ? process.env.DB_PASS : "",
+  db_name,
+  db_user,
+  db_pass,
   {
-    host: process.env.DB_HOST || "127.0.0.1",
-    port: process.env.DB_PORT || 3306,
+    host: db_host,
+    port: db_port,
     dialect: "mysql",
     logging: false,
     timezone: "-03:00",
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
     dialectOptions: {
       ssl: {
+        require: true,
         rejectUnauthorized: false
       }
     }
   }
 );
 
-sequelize
-  .authenticate()
-  .then(() => console.log("Conexão com MySQL OK!"))
-  .catch((err) => console.error("Erro de conexão no Sequelize:", err));
+sequelize.authenticate()
+  .then(() => console.log("🎯 CONECTADO AO BANCO COM SUCESSO!"))
+  .catch(err => {
+    console.log("❌ Erro de conexão:", err.message);
+  });
 
 const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// ===============================
-// MODELS (TUDO EM MINÚSCULO)
-// ===============================
+// Importação Completa dos Modelos
 db.Escola = require("./escola")(sequelize, DataTypes);
 db.User = require("./user")(sequelize, DataTypes);
 db.PasswordResetToken = require("./passwordresettoken")(sequelize, DataTypes);
