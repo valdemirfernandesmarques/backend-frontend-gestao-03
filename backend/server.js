@@ -1,3 +1,4 @@
+// backend/server.js
 const express = require("express");
 const cors = require("cors");
 const db = require("./models");
@@ -6,8 +7,13 @@ require("dotenv").config();
 
 const app = express();
 
+// Configuração de CORS: Liberando o seu novo link do Netlify e o localhost para testes
 app.use(cors({ 
-  origin: ["http://localhost:5173", "http://127.0.0.1:5173"], 
+  origin: [
+    "http://localhost:5173", 
+    "http://127.0.0.1:5173",
+    "https://wondrous-duckanoo-1d4650.netlify.app" // Seu link oficial do Netlify
+  ], 
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));
@@ -15,11 +21,12 @@ app.use(cors({
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
+// Rota de confirmação visual
 app.get("/", (req, res) => {
   res.send("🚀 API Gestão em Dança está online e operante!");
 });
 
-// Rotas
+// Registro de Rotas
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/alunos", require("./routes/alunoRoutes"));
@@ -39,17 +46,20 @@ async function criarSuperAdmin() {
     if (!existente) {
       const hash = await bcrypt.hash(adminPass, 10);
       await db.User.create({ 
-        nome: "Super Admin", email: adminEmail, password: hash, perfil: "SUPER_ADMIN" 
+        nome: "Super Admin", 
+        email: adminEmail, 
+        password: hash, 
+        perfil: "SUPER_ADMIN" 
       });
-      console.log("✅ Super Admin criado/verificado com sucesso");
+      console.log("✅ Super Admin verificado/criado");
     }
-  } catch (e) { console.error("Erro Admin:", e.message); }
+  } catch (e) { console.error("Erro ao verificar Admin:", e.message); }
 }
 
 const PORT = process.env.PORT || 10000;
 
 if (db.sequelize) {
-  // force: false IMPORTANTE para não apagar o seu backup depois de importar
+  // force: false garante que os dados que importar via SQL não sejam apagados
   db.sequelize.sync({ force: false }).then(async () => {
     console.log("🎯 Conectado ao banco com sucesso (Modo Produção)");
     await criarSuperAdmin();
@@ -57,7 +67,7 @@ if (db.sequelize) {
       console.log(`🚀 Servidor online na porta ${PORT}`);
     });
   }).catch(err => {
-    console.error("❌ Erro fatal:", err.message);
+    console.error("❌ Erro de sincronização:", err.message);
     app.listen(PORT, "0.0.0.0");
   });
 }
