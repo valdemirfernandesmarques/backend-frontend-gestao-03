@@ -2,9 +2,6 @@
 const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
-// ===============================
-// CONEXÃO COM BANCO
-// ===============================
 const sequelize = new Sequelize(
   process.env.DB_NAME || "gestao_danca",
   process.env.DB_USER || "root",
@@ -33,7 +30,7 @@ db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
 // ===============================
-// MODELS (Caminhos em minúsculo para compatibilidade com Linux)
+// MODELS (TUDO EM MINÚSCULO)
 // ===============================
 db.Escola = require("./escola")(sequelize, DataTypes);
 db.User = require("./user")(sequelize, DataTypes);
@@ -55,9 +52,6 @@ db.ProfessorModalidade = require("./professormodalidade")(sequelize, DataTypes);
 db.IsencaoTaxa = require("./isencaotaxa")(sequelize, DataTypes);
 db.TransacaoFinanceira = require("./transacaofinanceira")(sequelize, DataTypes);
 
-// ===============================
-// ASSOCIAÇÕES
-// ===============================
 Object.keys(db).forEach((modelName) => {
   if (db[modelName] && db[modelName].associate) {
     db[modelName].associate(db);
