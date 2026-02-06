@@ -45,6 +45,9 @@
               <option value="SP">São Paulo</option>
               <option value="RJ">Rio de Janeiro</option>
               <option value="MG">Minas Gerais</option>
+              <option value="SC">Santa Catarina</option>
+              <option value="PR">Paraná</option>
+              <option value="RS">Rio Grande do Sul</option>
             </select>
           </div>
         </fieldset>
@@ -61,7 +64,8 @@
 <script>
 import AdminEscolaLayout from '../layouts/AdminEscolaLayout.vue'
 import { ref } from 'vue'
-import axios from 'axios'
+// Alterado de 'axios' para a nossa instância configurada
+import api from '@/api/api'
 
 export default {
   name: 'Escola',
@@ -80,15 +84,15 @@ export default {
       estado: ''
     })
 
-    const token = localStorage.getItem('token')
-    const config = { headers: { Authorization: `Bearer ${token}` } }
-
     const submitForm = async () => {
       try {
-        await axios.post('http://localhost:3000/escolas', form.value, config)
+        // Agora usando 'api' que já tem o link do Render e o Token automático
+        await api.post('/escolas', form.value)
         alert('Escola cadastrada com sucesso!')
+        resetForm()
       } catch (err) {
         console.error('Erro ao salvar escola:', err)
+        alert('Erro ao salvar escola. Verifique se o servidor está online.')
       }
     }
 
@@ -112,6 +116,7 @@ export default {
       const cep = form.value.cep.replace(/\D/g, '')
       if (cep.length !== 8) return
       try {
+        // Mantido fetch direto para o ViaCEP (API externa pública)
         const res = await fetch(`https://viacep.com.br/ws/${cep}/json/`)
         const data = await res.json()
         if (!data.erro) {
@@ -143,10 +148,12 @@ button {
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  transition: 0.3s;
 }
 
 button:hover {
-  opacity: 0.9;
+  opacity: 0.8;
+  transform: scale(1.02);
 }
 
 fieldset {
@@ -159,6 +166,7 @@ fieldset {
 legend {
   color: #ff69b4;
   font-weight: bold;
+  padding: 0 10px;
 }
 
 .form-group {
