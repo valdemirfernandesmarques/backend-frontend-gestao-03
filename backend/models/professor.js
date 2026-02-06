@@ -7,9 +7,10 @@ module.exports = (sequelize, DataTypes) => {
     telefone: { type: DataTypes.STRING },
     endereco: { type: DataTypes.STRING },
     vinculo: { type: DataTypes.ENUM('CLT', 'Autônomo', 'Comissão'), allowNull: false },
-    ativo: { type: DataTypes.BOOLEAN, defaultValue: true }
+    ativo: { type: DataTypes.BOOLEAN, defaultValue: true },
+    percentualComissao: { type: DataTypes.FLOAT, defaultValue: 0 } // Adicionado conforme seu SQL
   }, {
-    tableName: 'Professors', // PADRONIZADO PARA PLURAL
+    tableName: 'professor', // EXATAMENTE COMO NO SEU SQL
     timestamps: true
   });
 

@@ -21,27 +21,63 @@ const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// CARREGAMENTO MANUAL EM ORDEM HIERÁRQUICA
+// Mapeamento exato conforme o arquivo gestao_danca.sql
 db.User = require("./user")(sequelize, DataTypes);
+db.User.options.tableName = 'users';
+
 db.Escola = require("./escola")(sequelize, DataTypes);
-db.Professor = require("./professor")(sequelize, DataTypes); // Carrega Professor antes de Comissao
+db.Escola.options.tableName = 'escolas';
+
+db.Professor = require("./professor")(sequelize, DataTypes);
+db.Professor.options.tableName = 'professor';
+
 db.Aluno = require("./aluno")(sequelize, DataTypes);
+db.Aluno.options.tableName = 'alunos';
+
 db.Funcionario = require("./funcionario")(sequelize, DataTypes);
+db.Funcionario.options.tableName = 'funcionarios';
+
 db.Modalidade = require("./modalidade")(sequelize, DataTypes);
+db.Modalidade.options.tableName = 'modalidades';
+
 db.Produto = require("./produto")(sequelize, DataTypes);
+db.Produto.options.tableName = 'produtos';
+
+db.Turma = require("./turma")(sequelize, DataTypes);
+db.Turma.options.tableName = 'turmas';
+
+db.Matricula = require("./matricula")(sequelize, DataTypes);
+db.Matricula.options.tableName = 'matriculas';
+
+db.Mensalidade = require("./mensalidade")(sequelize, DataTypes);
+db.Mensalidade.options.tableName = 'mensalidades';
+
+db.Pagamento = require("./pagamento")(sequelize, DataTypes);
+db.Pagamento.options.tableName = 'pagamentos';
+
+db.LancamentoFinanceiro = require("./lancamentofinanceiro")(sequelize, DataTypes);
+db.LancamentoFinanceiro.options.tableName = 'lancamentos_financeiros';
+
+db.Comissao = require("./comissao")(sequelize, DataTypes);
+db.Comissao.options.tableName = 'comissaos';
+
+db.Venda = require("./venda")(sequelize, DataTypes);
+db.Venda.options.tableName = 'vendas';
+
+db.VendaItem = require("./vendaitem")(sequelize, DataTypes);
+db.VendaItem.options.tableName = 'vendaitems';
+
+db.ProfessorModalidade = require("./professormodalidade")(sequelize, DataTypes);
+db.ProfessorModalidade.options.tableName = 'professores_modalidades';
+
+db.IsencaoTaxa = require("./isencaotaxa")(sequelize, DataTypes);
+db.IsencaoTaxa.options.tableName = 'isencoes_taxa';
+
+db.TransacaoFinanceira = require("./transacaofinanceira")(sequelize, DataTypes);
+db.TransacaoFinanceira.options.tableName = 'transacoes_financeiras';
 
 db.PasswordResetToken = require("./passwordresettoken")(sequelize, DataTypes);
-db.Turma = require("./turma")(sequelize, DataTypes);
-db.Matricula = require("./matricula")(sequelize, DataTypes);
-db.Mensalidade = require("./mensalidade")(sequelize, DataTypes);
-db.Pagamento = require("./pagamento")(sequelize, DataTypes);
-db.LancamentoFinanceiro = require("./lancamentofinanceiro")(sequelize, DataTypes);
-db.Comissao = require("./comissao")(sequelize, DataTypes); 
-db.Venda = require("./venda")(sequelize, DataTypes);
-db.VendaItem = require("./vendaitem")(sequelize, DataTypes);
-db.ProfessorModalidade = require("./professormodalidade")(sequelize, DataTypes);
-db.IsencaoTaxa = require("./isencaotaxa")(sequelize, DataTypes);
-db.TransacaoFinanceira = require("./transacaofinanceira")(sequelize, DataTypes);
+db.PasswordResetToken.options.tableName = 'password_reset_tokens';
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName] && db[modelName].associate) {
