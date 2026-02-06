@@ -7,11 +7,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: 'professor',
+          model: 'Professors', // Nome padrão da tabela no plural
           key: 'id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'SET NULL'
+        onDelete: 'CASCADE' // Corrigido: Para campos NOT NULL, usamos CASCADE em vez de SET NULL
       },
       pagamentoId: {
         type: DataTypes.INTEGER,
@@ -36,7 +36,6 @@ module.exports = (sequelize, DataTypes) => {
   Comissao.associate = (models) => {
     Comissao.belongsTo(models.Professor, { as: 'professor', foreignKey: 'professorId' });
     Comissao.belongsTo(models.Pagamento, { as: 'pagamento', foreignKey: 'pagamentoId' });
-    // Removida associação com Modalidade
   };
 
   return Comissao;
