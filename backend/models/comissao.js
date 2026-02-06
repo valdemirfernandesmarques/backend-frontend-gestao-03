@@ -7,11 +7,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-          model: 'Professors',
+          model: 'Professors', // Nome exato da tabela no banco
           key: 'id'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'CASCADE' // Ajustado para CASCADE para aceitar o allowNull: false
+        onDelete: 'CASCADE'
       },
       pagamentoId: {
         type: DataTypes.INTEGER,

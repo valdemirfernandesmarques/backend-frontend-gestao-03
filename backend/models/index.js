@@ -37,24 +37,24 @@ const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// CARREGAMENTO EM ORDEM HIERÁRQUICA PARA EVITAR ERRO DE REFERÊNCIA
+// IMPORTAÇÃO EM ORDEM HIERÁRQUICA (Obrigatório para evitar 'Failed to open table')
 // 1. Modelos Base (Independentes)
 db.User = require("./user")(sequelize, DataTypes);
 db.Escola = require("./escola")(sequelize, DataTypes);
-db.Professor = require("./professor")(sequelize, DataTypes);
+db.Professor = require("./professor")(sequelize, DataTypes); // Criado antes
 db.Aluno = require("./aluno")(sequelize, DataTypes);
 db.Funcionario = require("./funcionario")(sequelize, DataTypes);
 db.Modalidade = require("./modalidade")(sequelize, DataTypes);
 db.Produto = require("./produto")(sequelize, DataTypes);
 
-// 2. Modelos Dependentes (Possuem Chaves Estrangeiras)
+// 2. Modelos que dependem dos modelos acima
 db.PasswordResetToken = require("./passwordresettoken")(sequelize, DataTypes);
 db.Turma = require("./turma")(sequelize, DataTypes);
 db.Matricula = require("./matricula")(sequelize, DataTypes);
 db.Mensalidade = require("./mensalidade")(sequelize, DataTypes);
 db.Pagamento = require("./pagamento")(sequelize, DataTypes);
 db.LancamentoFinanceiro = require("./lancamentofinanceiro")(sequelize, DataTypes);
-db.Comissao = require("./comissao")(sequelize, DataTypes);
+db.Comissao = require("./comissao")(sequelize, DataTypes); // Criado depois
 db.Venda = require("./venda")(sequelize, DataTypes);
 db.VendaItem = require("./vendaitem")(sequelize, DataTypes);
 db.ProfessorModalidade = require("./professormodalidade")(sequelize, DataTypes);
