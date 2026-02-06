@@ -10,6 +10,7 @@ app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
+// Rotas
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/alunos", require("./routes/alunoRoutes"));
@@ -28,34 +29,39 @@ async function criarSuperAdmin() {
     const existente = await db.User.findOne({ where: { email: adminEmail } });
     if (!existente) {
       const hash = await bcrypt.hash(adminPass, 10);
-      await db.User.create({ nome: "Super Admin", email: adminEmail, password: hash, perfil: "SUPER_ADMIN" });
-      console.log("✅ Super Admin criado");
+      await db.User.create({ 
+        nome: "Super Admin", 
+        email: adminEmail, 
+        password: hash, 
+        perfil: "SUPER_ADMIN" 
+      });
+      console.log("✅ Super Admin verificado");
     }
-  } catch (e) { console.error("Admin:", e.message); }
+  } catch (e) { console.error("Erro Admin:", e.message); }
 }
 
 const PORT = process.env.PORT || 10000;
 
 if (db.sequelize) {
-  // 1. Desativa verificações para limpar o lixo do banco
+  // PASSO 1: Desativa as travas de chave estrangeira
   db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0')
     .then(() => {
-      // 2. Força a sincronização
+      // PASSO 2: Força a sincronização (limpa o banco antigo)
       return db.sequelize.sync({ force: true });
     })
     .then(() => {
-      // 3. Reativa as verificações
+      // PASSO 3: Reativa as travas para manter a segurança
       return db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
     })
     .then(async () => {
       console.log("🎯 BANCO RESETADO E CORRIGIDO COM SUCESSO!");
       await criarSuperAdmin();
       app.listen(PORT, "0.0.0.0", () => {
-        console.log(`🚀 Servidor rodando na porta ${PORT}`);
+        console.log(`🚀 Servidor online na porta ${PORT}`);
       });
     })
     .catch(err => {
-      console.error("❌ Erro:", err.message);
+      console.error("❌ Erro fatal:", err.message);
       app.listen(PORT, "0.0.0.0");
     });
 }

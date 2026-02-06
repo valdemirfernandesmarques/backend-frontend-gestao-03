@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
     vinculo: { type: DataTypes.ENUM('CLT', 'Autônomo', 'Comissão'), allowNull: false },
     ativo: { type: DataTypes.BOOLEAN, defaultValue: true }
   }, {
-    tableName: 'Professors',
+    tableName: 'Professors', // PADRONIZADO PARA PLURAL
     timestamps: true
   });
 

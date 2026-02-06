@@ -21,10 +21,10 @@ const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// ORDEM DE CARREGAMENTO MANUAL RÍGIDA
+// CARREGAMENTO MANUAL EM ORDEM HIERÁRQUICA
 db.User = require("./user")(sequelize, DataTypes);
 db.Escola = require("./escola")(sequelize, DataTypes);
-db.Professor = require("./professor")(sequelize, DataTypes); // Professor aqui
+db.Professor = require("./professor")(sequelize, DataTypes); // Carrega Professor antes de Comissao
 db.Aluno = require("./aluno")(sequelize, DataTypes);
 db.Funcionario = require("./funcionario")(sequelize, DataTypes);
 db.Modalidade = require("./modalidade")(sequelize, DataTypes);
@@ -36,7 +36,7 @@ db.Matricula = require("./matricula")(sequelize, DataTypes);
 db.Mensalidade = require("./mensalidade")(sequelize, DataTypes);
 db.Pagamento = require("./pagamento")(sequelize, DataTypes);
 db.LancamentoFinanceiro = require("./lancamentofinanceiro")(sequelize, DataTypes);
-db.Comissao = require("./comissao")(sequelize, DataTypes); // Comissão depende de Professor
+db.Comissao = require("./comissao")(sequelize, DataTypes); 
 db.Venda = require("./venda")(sequelize, DataTypes);
 db.VendaItem = require("./vendaitem")(sequelize, DataTypes);
 db.ProfessorModalidade = require("./professormodalidade")(sequelize, DataTypes);
