@@ -10,7 +10,14 @@ const app = express();
 // ===============================
 // ✅ Middlewares Globais
 // ===============================
-app.use(cors());
+
+// Ajuste no CORS para aceitar conexões do seu futuro Frontend no Render
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*", // Permite sua URL do Render ou qualquer uma em teste
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json()); // garante que o body seja processado corretamente
 
 // ✅ Servir arquivos estáticos da pasta uploads
@@ -94,7 +101,6 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/super", superAdminDashboardRoutes);
 
 // 🚀 SUPER_ADMIN — FINANCEIRO DA PLATAFORMA
-// (Transações, taxas, isenções, gateway, split, etc.)
 app.use(
   "/api/super/transacoes-financeiras",
   transacoesFinanceirasRoutes
@@ -140,9 +146,12 @@ async function criarSuperAdmin() {
 // ===============================
 // ===== Inicialização do Servidor =====
 // ===============================
+
+// O Render injeta a porta automaticamente na variável PORT
 const PORT = process.env.PORT || 3000;
 
 if (db.sequelize) {
+  // .sync() sem parâmetros não apaga dados, o que é seguro para produção
   db.sequelize
     .sync()
     .then(async () => {
