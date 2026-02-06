@@ -7,21 +7,20 @@ require("dotenv").config();
 
 const app = express();
 
-// Configuração de CORS: Liberando o seu novo link do Netlify e o localhost para testes
+// Configuração de CORS robusta
 app.use(cors({ 
-  origin: [
-    "http://localhost:5173", 
-    "http://127.0.0.1:5173",
-    "https://wondrous-duckanoo-1d4650.netlify.app" // Seu link oficial do Netlify
-  ], 
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true
+  origin: function (origin, callback) {
+    // Permite qualquer origem para evitar bloqueios de CORS durante a configuração
+    callback(null, true);
+  },
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// Rota de confirmação visual
 app.get("/", (req, res) => {
   res.send("🚀 API Gestão em Dança está online e operante!");
 });
@@ -59,7 +58,6 @@ async function criarSuperAdmin() {
 const PORT = process.env.PORT || 10000;
 
 if (db.sequelize) {
-  // force: false garante que os dados que importar via SQL não sejam apagados
   db.sequelize.sync({ force: false }).then(async () => {
     console.log("🎯 Conectado ao banco com sucesso (Modo Produção)");
     await criarSuperAdmin();
