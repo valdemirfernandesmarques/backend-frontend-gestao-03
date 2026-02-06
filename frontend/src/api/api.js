@@ -2,10 +2,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // Em produção, o Render usará a VITE_API_URL que cadastraremos no painel.
-  // Caso contrário, ele tenta usar o IP local para seus testes em casa.
-  baseURL: import.meta.env.VITE_API_URL || 'http://192.168.100.248:3000/api',
-  timeout: 15000, // Aumentei um pouco o timeout pois serviços gratuitos podem demorar a "acordar"
+  // Atualizado para o novo link do Render que está funcionando
+  baseURL: 'https://api-gestao-danca.onrender.com/api',
+  timeout: 30000, // Aumentado para 30s pois o Render gratuito "dorme" e demora a responder na primeira vez
 });
 
 // 🔐 Interceptor Dinâmico: Pega o token atualizado a cada requisição
@@ -20,13 +19,14 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// 🛡️ Interceptor de Resposta: Se der 401, força logout para evitar estado inconsistente
+// 🛡️ Interceptor de Resposta: Se der 401, força logout
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.clear();
-      // Opcional: window.location.href = '/login'; 
+      // Descomente a linha abaixo se quiser que ele redirecione para o login automaticamente
+      // window.location.href = '/login'; 
     }
     return Promise.reject(error);
   }
