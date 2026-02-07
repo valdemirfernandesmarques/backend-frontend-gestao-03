@@ -1,6 +1,5 @@
 <template>
   <div>
-    <!-- HEADER -->
     <header class="header">
       <h1>SUPER_ADMIN DASHBOARD</h1>
       <button class="toggle-btn" @click="toggleTheme">
@@ -8,23 +7,19 @@
       </button>
     </header>
 
-    <!-- DASHBOARD -->
     <main class="dashboard">
-      <!-- DOWNLOADS -->
       <div class="card">
         <h2>NÚMERO DE DOWNLOADS</h2>
         <p class="number">{{ downloads }}</p>
         <span>Quantas vezes o aplicativo foi baixado por escolas</span>
       </div>
 
-      <!-- USUÁRIOS ATIVOS -->
       <div class="card">
         <h2>USUÁRIOS ATIVOS</h2>
         <p class="number">{{ usuariosAtivos }}</p>
         <span>Quantas escolas estão usando o sistema neste momento</span>
       </div>
 
-      <!-- GAUGE -->
       <div class="card">
         <h2>DADOS DE USO</h2>
         <div class="gauge-container">
@@ -34,7 +29,6 @@
         <span>Informações sobre como os usuários estão interagindo com o sistema</span>
       </div>
 
-      <!-- RECEITA POR SERVIÇO -->
       <div class="card">
         <h2>RECEITA MENSAL POR SERVIÇO</h2>
         <div class="chart-container">
@@ -43,7 +37,6 @@
         <span>Ganho mensal por serviço, conforme a taxa de 1,3%</span>
       </div>
 
-      <!-- RECEITA TOTAL BARRAS -->
       <div class="card">
         <h2>RECEITA TOTAL POR MÊS</h2>
         <div class="chart-container">
@@ -52,7 +45,6 @@
         <span>Ganho total mensal conforme a taxa de 1,3%</span>
       </div>
 
-      <!-- RECEITA TOTAL LINHA -->
       <div class="card">
         <h2>RECEITA TOTAL POR MÊS</h2>
         <div class="chart-container">
@@ -85,8 +77,9 @@ export default {
 
     const token = localStorage.getItem("token");
 
+    // AJUSTE: Alterado de localhost para o link oficial do Render
     const api = axios.create({
-      baseURL: "http://localhost:3000/api/super",
+      baseURL: "https://api-gestao-danca.onrender.com/api/super",
       headers: { Authorization: `Bearer ${token}` }
     });
 
@@ -133,10 +126,10 @@ export default {
           labels: ["Pix", "Crédito", "Débito", "Dinheiro"],
           datasets: [{
             data: [
-              receitas.Pix,
-              receitas.Crédito,
-              receitas.Débito,
-              receitas.Dinheiro
+              receitas?.Pix || 0,
+              receitas?.Crédito || 0,
+              receitas?.Débito || 0,
+              receitas?.Dinheiro || 0
             ],
             backgroundColor: [
               "limegreen",
@@ -199,20 +192,24 @@ export default {
     };
 
     const carregarDashboard = async () => {
-      const uso = await api.get("/uso");
-      const downloadsRes = await api.get("/downloads");
-      const usuariosRes = await api.get("/usuarios-ativos");
-      const servicoRes = await api.get("/receita-servico");
-      const mensalRes = await api.get("/receita-total-mensal");
+      try {
+        const uso = await api.get("/uso");
+        const downloadsRes = await api.get("/downloads");
+        const usuariosRes = await api.get("/usuarios-ativos");
+        const servicoRes = await api.get("/receita-servico");
+        const mensalRes = await api.get("/receita-total-mensal");
 
-      animateNumber(downloads, downloadsRes.data.totalDownloads);
-      animateNumber(usuariosAtivos, usuariosRes.data.escolasAtivas);
-      percentualUso.value = uso.data.percentualUso;
+        animateNumber(downloads, downloadsRes.data.totalDownloads || 0);
+        animateNumber(usuariosAtivos, usuariosRes.data.escolasAtivas || 0);
+        percentualUso.value = uso.data.percentualUso || 0;
 
-      createGauge(uso.data.percentualUso);
-      createServicoChart(servicoRes.data.receitas);
-      createBarrasChart(mensalRes.data.meses, mensalRes.data.receitasBarras);
-      createLinhaChart(mensalRes.data.meses, mensalRes.data.receitasLinha);
+        createGauge(uso.data.percentualUso || 0);
+        createServicoChart(servicoRes.data.receitas || {});
+        createBarrasChart(mensalRes.data.meses || [], mensalRes.data.receitasBarras || []);
+        createLinhaChart(mensalRes.data.meses || [], mensalRes.data.receitasLinha || []);
+      } catch (err) {
+        console.error("Erro ao carregar dados do dashboard:", err);
+      }
     };
 
     const toggleTheme = () => {
