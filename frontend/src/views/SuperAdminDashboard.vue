@@ -86,7 +86,7 @@ export default {
     const token = localStorage.getItem("token");
 
     const api = axios.create({
-      baseURL: "http://localhost:3000/api/super",
+      baseURL: "https://seu-backend.onrender.com/api/super",
       headers: { Authorization: `Bearer ${token}` }
     });
 
