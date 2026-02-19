@@ -10,7 +10,19 @@ const app = express();
 // ===============================
 // ✅ Middlewares Globais
 // ===============================
-app.use(cors());
+
+// Configuração de CORS ajustada para seu domínio oficial e Render
+app.use(cors({
+  origin: [
+    "https://gestaoemdanca.com.br", 
+    "https://www.gestaoemdanca.com.br",
+    "https://seu-site-no-netlify.netlify.app" // Adicione o link do seu netlify aqui se necessário
+  ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
+}));
+
 app.use(express.json()); // garante que o body seja processado corretamente
 
 // ✅ Servir arquivos estáticos da pasta uploads
@@ -20,17 +32,10 @@ app.use("/uploads", express.static("uploads"));
 // ===== Importação das Rotas =====
 // ===============================
 
-// Auth / Usuários
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
-
-// 🔓 ATIVAÇÃO (rota pública)
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
-
-// 🔐 RECUPERAÇÃO DE SENHA (rota pública)
 const recuperarSenhaRoutes = require("./routes/recuperarSenhaRoutes");
-
-// ADMIN_ESCOLA
 const escolaRoutes = require("./routes/escolaRoutes");
 const produtoRoutes = require("./routes/produtoRoutes");
 const vendaRoutes = require("./routes/vendaRoutes");
@@ -47,11 +52,7 @@ const professorModalidadeRoutes = require("./routes/professorModalidadeRoutes");
 const comissaoRoutes = require("./routes/comissaoRoutes");
 const isencaoTaxaRoutes = require("./routes/isencaoTaxaRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
-
-// 🔔 WEBHOOK (Gateway agnóstico — SEM authMiddleware)
 const webhookRoutes = require("./routes/webhookRoutes");
-
-// 🚀 SUPER_ADMIN (ROTAS ISOLADAS)
 const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
@@ -59,17 +60,10 @@ const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoute
 // ===== Registro das Rotas =====
 // ===============================
 
-// 🔓 ATIVAÇÃO (pública)
 app.use("/api/ativacao", ativacaoRoutes);
-
-// 🔐 AUTH + RECUPERAÇÃO DE SENHA (públicas)
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
-
-// Usuários
 app.use("/api/users", userRoutes);
-
-// ADMIN_ESCOLA
 app.use("/api/escolas", escolaRoutes);
 app.use("/api/produtos", produtoRoutes);
 app.use("/api/vendas", vendaRoutes);
@@ -86,19 +80,9 @@ app.use("/api/professor-modalidade", professorModalidadeRoutes);
 app.use("/api/comissoes", comissaoRoutes);
 app.use("/api/isencao-taxa", isencaoTaxaRoutes);
 app.use("/api/financeiro", financeiroRoutes);
-
-// 🔔 WEBHOOK (não usa authMiddleware)
 app.use("/api/webhook", webhookRoutes);
-
-// 🚀 SUPER_ADMIN (TOTALMENTE ISOLADO DO ADMIN_ESCOLA)
 app.use("/api/super", superAdminDashboardRoutes);
-
-// 🚀 SUPER_ADMIN — FINANCEIRO DA PLATAFORMA
-// (Transações, taxas, isenções, gateway, split, etc.)
-app.use(
-  "/api/super/transacoes-financeiras",
-  transacoesFinanceirasRoutes
-);
+app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================
 // ===== Criação Automática do Super Admin =====
@@ -119,7 +103,6 @@ async function criarSuperAdmin() {
 
     if (!existente) {
       const hash = await bcrypt.hash(adminPass, 10);
-
       await db.User.create({
         nome: "Super Admin",
         email: adminEmail,
@@ -127,7 +110,6 @@ async function criarSuperAdmin() {
         perfil: "SUPER_ADMIN",
         escolaId: null,
       });
-
       console.log(`✅ Super Admin criado: ${adminEmail}`);
     } else {
       console.log(`ℹ️ Super Admin já existe: ${adminEmail}`);
@@ -140,24 +122,25 @@ async function criarSuperAdmin() {
 // ===============================
 // ===== Inicialização do Servidor =====
 // ===============================
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000; // Render usa a porta 10000
 
 if (db.sequelize) {
   db.sequelize
-    .sync()
+    .authenticate() // Testa a conexão antes de sincronizar
+    .then(() => {
+      console.log("📡 Conexão com o banco estabelecida com sucesso (Aiven SSL)!");
+      return db.sequelize.sync();
+    })
     .then(async () => {
       console.log("🎯 Banco de dados sincronizado!");
       await criarSuperAdmin();
-
       app.listen(PORT, () =>
         console.log(`🚀 Servidor rodando na porta ${PORT}`)
       );
     })
     .catch((err) => {
-      console.error("❌ Erro ao sincronizar banco:", err);
+      console.error("❌ Erro fatal de conexão/sincronização:", err);
     });
 } else {
-  console.error(
-    "❌ db.sequelize não encontrado. Verifique o arquivo models/index.js"
-  );
+  console.error("❌ db.sequelize não encontrado. Verifique o arquivo models/index.js");
 }
