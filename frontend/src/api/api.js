@@ -2,9 +2,8 @@
 import axios from 'axios';
 
 const api = axios.create({
-  // Ajustado para HTTPS para funcionar no Netlify com seu domínio próprio
-  // O link abaixo aponta para o seu servidor de processamento no Render
-  baseURL: import.meta.env.VITE_API_URL || 'https://api-gestao-danca.onrender.com/api', 
+  // Forçamos o link do Render diretamente para evitar que o cache use o localhost
+  baseURL: 'https://api-gestao-danca.onrender.com/api', 
   timeout: 15000, 
 });
 
@@ -26,6 +25,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.clear();
+      window.location.href = '/login'; // Redireciona para o login se o token expirar
     }
     return Promise.reject(error);
   }
