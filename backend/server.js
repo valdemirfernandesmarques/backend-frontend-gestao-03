@@ -10,7 +10,6 @@ const app = express();
 // ✅ Middlewares Globais
 // ===============================
 
-// Configuração de CORS ajustada para seu domínio oficial e Render
 app.use(cors({
   origin: [
     "https://gestaoemdanca.com.br", 
@@ -22,9 +21,16 @@ app.use(cors({
   credentials: true
 }));
 
-app.use(express.json()); // garante que o body seja processado corretamente
+app.use(express.json());
 
-// ✅ Servir arquivos estáticos da pasta uploads
+// Log para monitorar tentativas de login nos logs do Render
+app.use((req, res, next) => {
+  if (req.path === '/api/auth/login') {
+    console.log(` Attempting login for: ${req.body.email}`);
+  }
+  next();
+});
+
 app.use("/uploads", express.static("uploads"));
 
 // ===============================
@@ -91,14 +97,9 @@ async function criarSuperAdmin() {
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPass = process.env.ADMIN_PASS;
 
-    if (!db.User) {
-      console.error("❌ Modelo User não encontrado no banco de dados.");
-      return;
-    }
+    if (!db.User) return;
 
-    const existente = await db.User.findOne({
-      where: { email: adminEmail },
-    });
+    const existente = await db.User.findOne({ where: { email: adminEmail } });
 
     if (!existente) {
       const hash = await bcrypt.hash(adminPass, 10);
@@ -111,41 +112,32 @@ async function criarSuperAdmin() {
       });
       console.log(`✅ Super Admin criado: ${adminEmail}`);
     } else {
-      console.log(`ℹ️ Super Admin já existe: ${adminEmail}`);
+      console.log(`ℹ️ Super Admin verificado: ${adminEmail}`);
     }
   } catch (error) {
-    console.error("❌ Erro ao criar Super Admin:", error);
+    console.error("❌ Erro Super Admin:", error.message);
   }
 }
 
 // ===============================
-// ===== Inicialização do Servidor =====
+// ===== Inicialização =====
 // ===============================
 const PORT = process.env.PORT || 10000;
 
-async function iniciarServidor() {
+async function bootstrap() {
   try {
-    if (db.sequelize) {
-      // 1. Apenas autentica a conexão, sem sincronizar tabelas
-      await db.sequelize.authenticate();
-      console.log("📡 Conexão com o banco estabelecida com sucesso (Aiven SSL)!");
+    await db.sequelize.authenticate();
+    console.log("📡 Banco de Dados Conectado.");
+    
+    await criarSuperAdmin();
 
-      // 2. Garante o Super Admin
-      await criarSuperAdmin();
-
-      // 3. Sobe o servidor
-      app.listen(PORT, () => {
-        console.log(`🚀 Servidor rodando na porta ${PORT}`);
-        console.log(`🔗 API: https://api-gestao-danca.onrender.com`);
-      });
-    } else {
-      throw new Error("db.sequelize não encontrado.");
-    }
-  } catch (error) {
-    console.error("❌ Erro fatal na inicialização:", error);
-    // Tenta subir o servidor mesmo com erro de banco para não deixar o deploy falhar
-    app.listen(PORT, () => console.log(`🚀 Servidor subiu em modo de emergência na porta ${PORT}`));
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor pronto na porta ${PORT}`);
+    });
+  } catch (err) {
+    console.error("⚠️ Falha crítica, tentando subir mesmo assim:", err.message);
+    app.listen(PORT);
   }
 }
 
-iniciarServidor();
+bootstrap();
