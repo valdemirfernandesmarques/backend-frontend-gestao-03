@@ -62,7 +62,7 @@ export default {
     // Carregar vinculos
     const carregarVinculos = async () => {
       try {
-        const response = await axios.get('https://seu-backend.onrender.com/api/professor-modalidade', { headers })
+        const response = await axios.get('https://https://api-gestao-danca.onrender.com/api/professor-modalidade', { headers })
         vinculos.value = response.data
       } catch (err) {
         console.error('Erro ao carregar vinculos:', err)
@@ -72,7 +72,7 @@ export default {
     // Carregar professores
     const carregarProfessores = async () => {
       try {
-        const response = await axios.get('https://seu-backend.onrender.com/api/professores', { headers })
+        const response = await axios.get('https://https://api-gestao-danca.onrender.com/api/professores', { headers })
         professores.value = response.data
       } catch (err) {
         console.error('Erro ao carregar professores:', err)
@@ -82,7 +82,7 @@ export default {
     // Carregar modalidades
     const carregarModalidades = async () => {
       try {
-        const response = await axios.get('https://seu-backend.onrender.com/api/modalidades', { headers })
+        const response = await axios.get('https://https://api-gestao-danca.onrender.com/api/modalidades', { headers })
         modalidades.value = response.data
       } catch (err) {
         console.error('Erro ao carregar modalidades:', err)
@@ -108,9 +108,9 @@ export default {
     async function submitForm() {
       try {
         if (editMode.value) {
-          await axios.put(`https://seu-backend.onrender.com/api/professor-modalidade/${form.value.id}`, form.value, { headers })
+          await axios.put(`https://https://api-gestao-danca.onrender.com/api/professor-modalidade/${form.value.id}`, form.value, { headers })
         } else {
-          await axios.post('https://seu-backend.onrender.com/api/professor-modalidade', form.value, { headers })
+          await axios.post('https://https://api-gestao-danca.onrender.com/api/professor-modalidade', form.value, { headers })
         }
         closeModal()
         carregarVinculos()
@@ -128,7 +128,7 @@ export default {
     async function deletarVinculo(vinculo) {
       if (!confirm(`Deseja realmente remover a vinculação?`)) return
       try {
-        await axios.delete(`https://seu-backend.onrender.com/api/professor-modalidade/${vinculo.id}`, { headers })
+        await axios.delete(`https://https://api-gestao-danca.onrender.com/api/professor-modalidade/${vinculo.id}`, { headers })
         carregarVinculos()
       } catch (err) {
         console.error('Erro ao deletar vinculo:', err)

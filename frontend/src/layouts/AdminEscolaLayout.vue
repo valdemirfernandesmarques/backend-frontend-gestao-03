@@ -92,7 +92,7 @@ import { useRouter } from 'vue-router'
 import api from '../api/api'
 import AppFooter from '../views/AppFooter.vue'
 
-const BASE_URL_SERVER = 'https://seu-backend.onrender.com'
+const BASE_URL_SERVER = 'https://https://api-gestao-danca.onrender.com'
 const router = useRouter()
 
 const userName = ref(localStorage.getItem('nomeEscola') || 'Escola') 

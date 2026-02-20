@@ -1,4 +1,3 @@
-// backend/server.js
 const express = require("express");
 const cors = require("cors");
 const db = require("./models");
@@ -16,7 +15,7 @@ app.use(cors({
   origin: [
     "https://gestaoemdanca.com.br", 
     "https://www.gestaoemdanca.com.br",
-    "https://seu-site-no-netlify.netlify.app" // Adicione o link do seu netlify aqui se necessário
+    "https://seu-site-no-netlify.netlify.app" 
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -122,24 +121,25 @@ async function criarSuperAdmin() {
 // ===============================
 // ===== Inicialização do Servidor =====
 // ===============================
-const PORT = process.env.PORT || 10000; // Render usa a porta 10000
+const PORT = process.env.PORT || 10000;
 
 if (db.sequelize) {
   db.sequelize
-    .authenticate() // Testa a conexão antes de sincronizar
-    .then(() => {
-      console.log("📡 Conexão com o banco estabelecida com sucesso (Aiven SSL)!");
-      return db.sequelize.sync();
-    })
+    .authenticate() // ✅ Testa a conexão
     .then(async () => {
-      console.log("🎯 Banco de dados sincronizado!");
+      console.log("📡 Conexão com o banco estabelecida com sucesso (Aiven SSL)!");
+      
+      // ✅ COMENTADO/REMOVIDO: db.sequelize.sync() 
+      // Não tentamos mais criar tabelas para evitar o erro fatal de Chave Estrangeira.
+      
       await criarSuperAdmin();
+      
       app.listen(PORT, () =>
         console.log(`🚀 Servidor rodando na porta ${PORT}`)
       );
     })
     .catch((err) => {
-      console.error("❌ Erro fatal de conexão/sincronização:", err);
+      console.error("❌ Erro fatal de conexão:", err);
     });
 } else {
   console.error("❌ db.sequelize não encontrado. Verifique o arquivo models/index.js");

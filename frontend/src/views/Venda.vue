@@ -206,7 +206,7 @@ function showNotification(msg, err = false) {
 
 function getImageUrl(filename) {
     if (!filename) return null;
-    return `https://seu-backend.onrender.com/uploads/produtos/${filename}`;
+    return `https://api-gestao-danca.onrender.com/uploads/produtos/${filename}`;
 }
 
 // --- PRODUTOS ---

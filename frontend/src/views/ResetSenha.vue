@@ -113,7 +113,7 @@ export default {
       loading.value = true
       try {
         await axios.post(
-          `http:https://seu-backend.onrender.com/api/auth/reset-password/${token}`,
+          `http:https://https://api-gestao-danca.onrender.com/api/auth/reset-password/${token}`,
           { password: password.value }
         )
         sucesso.value = true

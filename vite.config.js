@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://seu-backend.onrender.com',
+        target: 'https://https://api-gestao-danca.onrender.com',
         changeOrigin: true,
       }
     }
