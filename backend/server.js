@@ -15,7 +15,7 @@ app.use(cors({
   origin: [
     "https://gestaoemdanca.com.br", 
     "https://www.gestaoemdanca.com.br",
-    "https://seu-site-no-netlify.netlify.app" 
+    "https://seu-site-no-netlify.netlify.app"
   ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
@@ -123,24 +123,29 @@ async function criarSuperAdmin() {
 // ===============================
 const PORT = process.env.PORT || 10000;
 
-if (db.sequelize) {
-  db.sequelize
-    .authenticate() // ✅ Testa a conexão
-    .then(async () => {
+async function iniciarServidor() {
+  try {
+    if (db.sequelize) {
+      // 1. Apenas autentica a conexão, sem sincronizar tabelas
+      await db.sequelize.authenticate();
       console.log("📡 Conexão com o banco estabelecida com sucesso (Aiven SSL)!");
-      
-      // ✅ COMENTADO/REMOVIDO: db.sequelize.sync() 
-      // Não tentamos mais criar tabelas para evitar o erro fatal de Chave Estrangeira.
-      
+
+      // 2. Garante o Super Admin
       await criarSuperAdmin();
-      
-      app.listen(PORT, () =>
-        console.log(`🚀 Servidor rodando na porta ${PORT}`)
-      );
-    })
-    .catch((err) => {
-      console.error("❌ Erro fatal de conexão:", err);
-    });
-} else {
-  console.error("❌ db.sequelize não encontrado. Verifique o arquivo models/index.js");
+
+      // 3. Sobe o servidor
+      app.listen(PORT, () => {
+        console.log(`🚀 Servidor rodando na porta ${PORT}`);
+        console.log(`🔗 API: https://api-gestao-danca.onrender.com`);
+      });
+    } else {
+      throw new Error("db.sequelize não encontrado.");
+    }
+  } catch (error) {
+    console.error("❌ Erro fatal na inicialização:", error);
+    // Tenta subir o servidor mesmo com erro de banco para não deixar o deploy falhar
+    app.listen(PORT, () => console.log(`🚀 Servidor subiu em modo de emergência na porta ${PORT}`));
+  }
 }
+
+iniciarServidor();
