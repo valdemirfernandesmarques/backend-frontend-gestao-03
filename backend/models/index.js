@@ -1,33 +1,47 @@
-const { Sequelize, DataTypes } = require("sequelize");
+// backend/models/index.js
+
+const fs = require("fs");
+const path = require("path");
+const Sequelize = require("sequelize");
 require("dotenv").config();
 
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
+  {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT || 13908,
     dialect: "mysql",
     logging: false,
-    dialectOptions: { ssl: { require: true, rejectUnauthorized: false } }
-});
+    dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+  }
+);
 
 const db = {};
 
-// Importação ajustada para garantir a letra inicial MAIÚSCULA
-// O Node no Linux exige que o nome aqui seja igual ao nome do arquivo no disco
-db.Escola = require("./Escola")(sequelize, DataTypes);
-db.Aluno = require("./Aluno")(sequelize, DataTypes);
-db.Professor = require("./Professor")(sequelize, DataTypes);
-db.Funcionario = require("./Funcionario")(sequelize, DataTypes);
-db.Modalidade = require("./Modalidade")(sequelize, DataTypes);
-db.Turma = require("./Turma")(sequelize, DataTypes);
-db.Matricula = require("./Matricula")(sequelize, DataTypes);
-db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
-db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
+// Lê automaticamente todos os arquivos .js dentro da pasta models
+fs.readdirSync(__dirname)
+  .filter((file) => {
+    return (
+      file.indexOf(".") !== 0 &&
+      file !== "index.js" &&
+      file.slice(-3) === ".js"
+    );
+  })
+  .forEach((file) => {
+    const model = require(path.join(__dirname, file))(
+      sequelize,
+      Sequelize.DataTypes
+    );
+    db[model.name] = model;
+  });
 
-// Associações com verificação
+// Executa associações
 Object.keys(db).forEach((modelName) => {
-    if (db[modelName] && db[modelName].associate) {
-        db[modelName].associate(db);
-    }
+  if (db[modelName].associate) {
+    db[modelName].associate(db);
+  }
 });
 
 db.sequelize = sequelize;
