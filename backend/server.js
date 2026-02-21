@@ -6,16 +6,16 @@ require("dotenv").config();
 
 const app = express();
 
-// --- CONFIGURAÇÕES GERAIS ---
+// Middlewares
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// --- SERVIR FRONTEND ---
+// Frontend (Pasta dist)
 const distPath = path.resolve(__dirname, "dist");
 app.use(express.static(distPath));
 
-// --- IMPORTAÇÃO DE ROTAS ---
+// Importação das rotas
 const authRoutes = require("./routes/authRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
 const escolaRoutes = require("./routes/escolaRoutes");
@@ -25,7 +25,7 @@ const professorRoutes = require("./routes/professorRoutes");
 const turmaRoutes = require("./routes/turmaRoutes");
 const matriculaRoutes = require("./routes/matriculaRoutes");
 
-// --- REGISTRO DE ROTAS ---
+// Registro das rotas
 app.use("/api/auth", authRoutes);
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/escolas", escolaRoutes);
@@ -35,11 +35,13 @@ app.use("/api/professores", professorRoutes);
 app.use("/api/turmas", turmaRoutes);
 app.use("/api/matriculas", matriculaRoutes);
 
-// Suporte ao F5 e rotas do Frontend (SPA)
+// Suporte ao roteamento SPA (Single Page Application)
 app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
         res.sendFile(path.join(distPath, "index.html"), (err) => {
-            if (err) res.status(500).send("Aguardando upload da pasta dist...");
+            if (err) {
+                res.status(200).send("<h3>Servidor Online</h3><p>Aguardando upload dos arquivos do site via Git...</p>");
+            }
         });
     }
 });
@@ -48,28 +50,28 @@ const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
     try {
-        console.log("📡 Conectando ao MySQL Aiven...");
+        console.log("📡 Conectando ao MySQL da Aiven...");
         await db.sequelize.authenticate();
         console.log("✅ Conexão estabelecida.");
 
-        // Sincroniza sem derrubar o servidor em caso de erros residuais
+        // Sincroniza o banco de forma resiliente
         try {
             await db.sequelize.sync({ alter: true });
             console.log("✅ Tabelas sincronizadas.");
-        } catch (e) {
-            console.log("⚠️ Nota: Estrutura mantida via script manual.");
+        } catch (syncErr) {
+            console.log("⚠️ Sincronização automática ignorada (usando tabelas corrigidas manualmente).");
         }
         
-        // Garante escola ID 2 para o funcionamento básico
+        // Garante a existência da escola ID 2
         await db.Escola.findOrCreate({ 
             where: { id: 2 }, 
-            defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
+            defaults: { id: 2, nome: "Escola de Dança Gestão", status: "ATIVO" } 
         });
 
         app.listen(PORT, () => console.log(`🚀 SERVIDOR OPERACIONAL NA PORTA ${PORT}`));
     } catch (err) {
-        console.error("❌ Erro fatal:", err.message);
-        app.listen(PORT, () => console.log("⚠️ Servidor iniciado em modo de segurança."));
+        console.error("❌ Erro ao iniciar servidor:", err.message);
+        app.listen(PORT, () => console.log("⚠️ Servidor rodando em modo de emergência."));
     }
 }
 
