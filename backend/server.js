@@ -10,11 +10,7 @@ const app = express();
 // ✅ Middlewares Globais
 // ===============================
 app.use(cors({
-  origin: [
-    "https://gestaoemdanca.com.br", 
-    "https://www.gestaoemdanca.com.br",
-    "https://seu-site-no-netlify.netlify.app"
-  ],
+  origin: ["https://gestaoemdanca.com.br", "https://www.gestaoemdanca.com.br"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
@@ -78,68 +74,67 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===========================================
-// 🔥 AJUSTE DE ESTRUTURA E SUPER ADMIN
+// 🔥 CORREÇÃO FORÇADA DE COLUNAS (SQL PURO)
 // ===========================================
-async function ajustarEstruturaBanco() {
+async function realizarManutencaoBanco() {
   try {
-    const adminEmail = "valdemir.marques1925@gmail.com";
-    const adminPass = "Gestao@danca202558";
+    console.log("🛠️ Verificando e criando colunas faltantes manualmente...");
 
-    console.log("🛠️ Iniciando sincronização com 'alter: true' para corrigir colunas...");
-    
-    // O 'alter: true' verifica o que falta (como a coluna 'descricao') e adiciona
-    await db.sequelize.sync({ alter: true });
-    
-    console.log("✅ Tabelas atualizadas com sucesso!");
-
-    // Garante que o Super Admin está correto
-    const hash = await bcrypt.hash(adminPass, 10);
-    const [user, created] = await db.User.findOrCreate({
-      where: { email: adminEmail },
-      defaults: {
-        nome: "Super Admin",
-        email: adminEmail,
-        password: hash,
-        perfil: "SUPER_ADMIN",
-        escolaId: null,
-      }
-    });
-
-    if (!created) {
-      await user.update({ password: hash });
-      console.log(`ℹ️ Credenciais do Super Admin sincronizadas.`);
-    } else {
-      console.log(`✅ Super Admin criado no reset.`);
+    // Tenta adicionar a coluna 'descricao' na tabela modalidades
+    try {
+      await db.sequelize.query("ALTER TABLE modalidades ADD COLUMN descricao TEXT AFTER nome;");
+      console.log("✅ Coluna 'descricao' adicionada em modalidades.");
+    } catch (e) {
+      console.log("ℹ️ Coluna 'descricao' já existe ou não pôde ser adicionada.");
     }
 
+    // Tenta adicionar as colunas de horário na tabela turmas
+    try {
+      await db.sequelize.query("ALTER TABLE turmas ADD COLUMN horarioInicio TIME AFTER nome;");
+      await db.sequelize.query("ALTER TABLE turmas ADD COLUMN horarioFim TIME AFTER horarioInicio;");
+      console.log("✅ Colunas de horário adicionadas em turmas.");
+    } catch (e) {
+      console.log("ℹ️ Colunas de horário já existem em turmas.");
+    }
+
+    // Tenta adicionar a coluna 'precoAula' se não existir
+    try {
+        await db.sequelize.query("ALTER TABLE modalidades ADD COLUMN precoAula DECIMAL(10,2) AFTER descricao;");
+        console.log("✅ Coluna 'precoAula' adicionada.");
+    } catch (e) {
+        console.log("ℹ️ Coluna 'precoAula' já existe.");
+    }
+
+    // Sincronização final leve
+    await db.sequelize.sync({ alter: false });
+
   } catch (error) {
-    console.error("❌ Erro durante ajuste do banco:", error.message);
-    // Se der erro de Foreign Key, o código abaixo ajuda a ignorar e subir o servidor
+    console.error("⚠️ Erro na manutenção:", error.message);
   }
 }
 
 // ===============================
-// ===== Inicialização do Servidor =====
+// ===== Inicialização =====
 // ===============================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
     await db.sequelize.authenticate();
-    console.log("📡 Conexão com MySQL estabelecida.");
+    console.log("📡 Banco Conectado.");
 
-    // Executa a limpeza de possíveis Views e atualiza colunas
+    // Remove a View problemática se houver
     await db.sequelize.query("DROP VIEW IF EXISTS Escolas;");
-    await ajustarEstruturaBanco();
+    
+    // Roda a manutenção de colunas antes de subir o servidor
+    await realizarManutencaoBanco();
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
-      console.log("🔗 API pronta para receber requisições.");
     });
   } catch (err) {
-    console.error("⚠️ Falha ao iniciar:", err.message);
-    // Tenta manter o servidor vivo mesmo com erros de DB
-    app.listen(PORT, () => console.log("🚀 Servidor em modo de recuperação."));
+    console.error("❌ Falha crítica:", err.message);
+    app.listen(PORT);
   }
 }
 
