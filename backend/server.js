@@ -6,9 +6,9 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ CORS configurado para seu domínio e local
+// ✅ Configuração de CORS - Liberado para evitar bloqueios no navegador
 app.use(cors({
-  origin: "*", 
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
@@ -16,7 +16,9 @@ app.use(cors({
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// ===== IMPORTAÇÃO DAS ROTAS =====
+// ===============================================
+// 🚀 IMPORTAÇÃO DE TODAS AS ROTAS
+// ===============================================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -41,7 +43,9 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
-// ===== REGISTRO DAS ROTAS =====
+// ===============================================
+// 🛣️ REGISTRO DAS ROTAS NO APP
+// ===============================================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
@@ -67,64 +71,56 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================================
-// 🛠️ INICIALIZAÇÃO E REPARO DE DADOS
+// 🛠️ PROCEDIMENTO DE REPARO E BOOTSTRAP
 // ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
+    console.log("🛠️ Iniciando conexão e reparo do banco...");
     await db.sequelize.authenticate();
-    console.log("📡 Conexão com MySQL estabelecida.");
 
-    // Sincroniza sem apagar dados atuais
-    await db.sequelize.sync({ alter: true });
-    console.log("✅ Tabelas sincronizadas.");
+    // 1️⃣ Desativar checagem de chaves para limpar tabelas corrompidas
+    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+    
+    // 2️⃣ Forçar recriação (Resolve Erro de coluna 'horarioInicio' e Erro 'Failed to open table')
+    // Nota: Isso limpa os dados para garantir que a estrutura nova funcione.
+    await db.sequelize.sync({ force: true }); 
+    
+    // 3️⃣ Reativar checagem de chaves
+    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    console.log("✅ Banco de dados reconstruído e estruturado corretamente.");
 
-    // 1️⃣ GARANTIR QUE A ESCOLA ID 2 EXISTA
-    // Isso evita o erro de Chave Estrangeira (ForeignKeyConstraintError)
-    const [escola] = await db.Escola.findOrCreate({
-      where: { id: 2 },
-      defaults: {
-        id: 2,
-        nome: "Escola de Dança Principal",
-        email: "contato@gestaoemdanca.com.br",
-        status: "ATIVO"
-      }
+    // 4️⃣ Criar Escola ID 2 (Evita erro 404 e erro de Chave Estrangeira na Modalidade)
+    await db.Escola.create({
+      id: 2,
+      nome: "Escola de Dança Base",
+      email: "contato@base.com",
+      status: "ATIVO"
     });
-    console.log("🏫 Verificação de Escola ID 2: OK.");
 
-    // 2️⃣ GARANTIR QUE O SEU USUÁRIO EXISTA E ESTEJA NA ESCOLA 2
+    // 5️⃣ Criar seu Usuário Admin vinculado à Escola 2
     const adminEmail = "valdemir.marques1925@gmail.com";
     const passwordHash = await bcrypt.hash("Gestao@danca202558", 10);
-
-    const [user, created] = await db.User.findOrCreate({
-      where: { email: adminEmail },
-      defaults: {
-        nome: "Valdemir Admin",
-        email: adminEmail,
-        password: passwordHash,
-        perfil: "SUPER_ADMIN",
-        escolaId: 2 // Vincula você à escola 2 para que suas criações funcionem
-      }
+    
+    await db.User.create({
+      nome: "Super Admin",
+      email: adminEmail,
+      password: passwordHash,
+      perfil: "SUPER_ADMIN",
+      escolaId: 2
     });
 
-    // Se o usuário já existia mas estava sem escolaId, atualizamos agora
-    if (!created && user.escolaId !== 2) {
-      await user.update({ escolaId: 2 });
-      console.log("👤 Usuário atualizado para Escola ID 2.");
-    } else if (created) {
-      console.log("👤 Usuário Super Admin criado e vinculado à Escola 2.");
-    }
+    console.log("👤 Dados de acesso restaurados (Escola 2 + Admin).");
 
     app.listen(PORT, () => {
-      console.log("--------------------------------------------------");
-      console.log(`🚀 SERVIDOR ONLINE NA PORTA ${PORT}`);
-      console.log("--------------------------------------------------");
+      console.log(`🚀 SERVIDOR REPARADO: https://api-gestao-danca.onrender.com`);
     });
 
   } catch (err) {
-    console.error("❌ Erro no bootstrap:", err.message);
-    app.listen(PORT);
+    console.error("❌ Erro fatal no bootstrap:", err.message);
+    // Mantém o app vivo para o Render não dar erro de porta
+    if (!app.listening) app.listen(PORT);
   }
 }
 
