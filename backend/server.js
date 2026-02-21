@@ -9,7 +9,6 @@ const app = express();
 // ===============================
 // ✅ Middlewares Globais
 // ===============================
-
 app.use(cors({
   origin: [
     "https://gestaoemdanca.com.br", 
@@ -22,21 +21,11 @@ app.use(cors({
 }));
 
 app.use(express.json());
-
-// Log para monitorar tentativas de login nos logs do Render
-app.use((req, res, next) => {
-  if (req.path === '/api/auth/login') {
-    console.log(` Attempting login for: ${req.body.email}`);
-  }
-  next();
-});
-
 app.use("/uploads", express.static("uploads"));
 
 // ===============================
 // ===== Importação das Rotas =====
 // ===============================
-
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -64,7 +53,6 @@ const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoute
 // ===============================
 // ===== Registro das Rotas =====
 // ===============================
-
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
@@ -96,11 +84,8 @@ async function criarSuperAdmin() {
   try {
     const adminEmail = process.env.ADMIN_EMAIL;
     const adminPass = process.env.ADMIN_PASS;
-
     if (!db.User) return;
-
     const existente = await db.User.findOne({ where: { email: adminEmail } });
-
     if (!existente) {
       const hash = await bcrypt.hash(adminPass, 10);
       await db.User.create({
@@ -112,7 +97,7 @@ async function criarSuperAdmin() {
       });
       console.log(`✅ Super Admin criado: ${adminEmail}`);
     } else {
-      console.log(`ℹ️ Super Admin verificado: ${adminEmail}`);
+      console.log(`ℹ️ Super Admin verificado.`);
     }
   } catch (error) {
     console.error("❌ Erro Super Admin:", error.message);
@@ -120,7 +105,7 @@ async function criarSuperAdmin() {
 }
 
 // ===============================
-// ===== Inicialização =====
+// ===== Inicialização Blindada =====
 // ===============================
 const PORT = process.env.PORT || 10000;
 
@@ -128,14 +113,24 @@ async function bootstrap() {
   try {
     await db.sequelize.authenticate();
     console.log("📡 Banco de Dados Conectado.");
+
+    // 🔥 COMANDO DE LIMPEZA: Remove a VIEW que está bloqueando a tabela Escolas
+    console.log("🧹 Limpando possíveis conflitos de VIEWs...");
+    await db.sequelize.query("DROP VIEW IF EXISTS Escolas;");
     
+    // Agora que a VIEW sumiu, tentamos sincronizar APENAS a tabela Escola e User
+    // para garantir que o login e ativação funcionem
+    await db.Escola.sync();
+    await db.User.sync();
+    console.log("✅ Tabelas base (Escola/User) sincronizadas.");
+
     await criarSuperAdmin();
 
     app.listen(PORT, () => {
-      console.log(`🚀 Servidor pronto na porta ${PORT}`);
+      console.log(`🚀 Servidor rodando na porta ${PORT}`);
     });
   } catch (err) {
-    console.error("⚠️ Falha crítica, tentando subir mesmo assim:", err.message);
+    console.error("⚠️ Falha crítica:", err.message);
     app.listen(PORT);
   }
 }
