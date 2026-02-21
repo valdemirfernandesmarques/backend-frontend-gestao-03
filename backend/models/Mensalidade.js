@@ -1,4 +1,5 @@
 module.exports = (sequelize, DataTypes) => {
+
     const Mensalidade = sequelize.define('Mensalidade', {
         id: {
             type: DataTypes.INTEGER,
@@ -41,18 +42,22 @@ module.exports = (sequelize, DataTypes) => {
     });
 
     Mensalidade.associate = (models) => {
+
         Mensalidade.belongsTo(models.Matricula, {
             as: 'matricula',
             foreignKey: 'matriculaId'
         });
+
         Mensalidade.belongsTo(models.Escola, {
             as: 'escola',
             foreignKey: 'escolaId'
         });
+
         Mensalidade.hasMany(models.Pagamento, {
             as: 'pagamentos',
             foreignKey: 'mensalidadeId'
         });
+
     };
 
     return Mensalidade;
