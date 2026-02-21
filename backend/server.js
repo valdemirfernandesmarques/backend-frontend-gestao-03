@@ -6,7 +6,7 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ Configuração de CORS - Liberado para evitar bloqueios no navegador
+// ✅ CORS TOTALMENTE LIBERADO PARA DESTRAVAR O FRONTEND
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -17,7 +17,7 @@ app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 // ===============================================
-// 🚀 IMPORTAÇÃO DE TODAS AS ROTAS
+// 🚀 IMPORTAÇÃO DAS ROTAS (ESTRUTURA COMPLETA)
 // ===============================================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -44,7 +44,7 @@ const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
 // ===============================================
-// 🛣️ REGISTRO DAS ROTAS NO APP
+// 🛣️ REGISTRO DAS ROTAS
 // ===============================================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
@@ -71,55 +71,52 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================================
-// 🛠️ PROCEDIMENTO DE REPARO E BOOTSTRAP
+// 🛠️ SCRIPT DE REPARO E INICIALIZAÇÃO
 // ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ Iniciando conexão e reparo do banco...");
+    console.log("🛠️ Iniciando Reparo de Emergência no Banco...");
     await db.sequelize.authenticate();
 
-    // 1️⃣ Desativar checagem de chaves para limpar tabelas corrompidas
+    // 1️⃣ Forçar desativação de chaves estrangeiras (mata o erro 'Failed to open table')
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
     
-    // 2️⃣ Forçar recriação (Resolve Erro de coluna 'horarioInicio' e Erro 'Failed to open table')
-    // Nota: Isso limpa os dados para garantir que a estrutura nova funcione.
+    // 2️⃣ Forçar recriação completa (LIMPA O BANCO E CORRIGE ESTRUTURA)
     await db.sequelize.sync({ force: true }); 
     
-    // 3️⃣ Reativar checagem de chaves
+    // 3️⃣ Reativar chaves
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Banco de dados reconstruído e estruturado corretamente.");
+    console.log("✅ Banco de dados reconstruído do zero.");
 
-    // 4️⃣ Criar Escola ID 2 (Evita erro 404 e erro de Chave Estrangeira na Modalidade)
+    // 4️⃣ Criar Escola com ID 2 (necessário para o seu frontend atual)
     await db.Escola.create({
       id: 2,
-      nome: "Escola de Dança Base",
+      nome: "Escola de Dança Principal",
       email: "contato@base.com",
       status: "ATIVO"
     });
 
-    // 5️⃣ Criar seu Usuário Admin vinculado à Escola 2
-    const adminEmail = "valdemir.marques1925@gmail.com";
-    const passwordHash = await bcrypt.hash("Gestao@danca202558", 10);
-    
+    // 5️⃣ Criar Usuário Admin vinculado à Escola 2
+    const hash = await bcrypt.hash("Gestao@danca202558", 10);
     await db.User.create({
-      nome: "Super Admin",
-      email: adminEmail,
-      password: passwordHash,
+      nome: "Valdemir Admin",
+      email: "valdemir.marques1925@gmail.com",
+      password: hash,
       perfil: "SUPER_ADMIN",
       escolaId: 2
     });
 
-    console.log("👤 Dados de acesso restaurados (Escola 2 + Admin).");
+    console.log("👤 Acesso Restaurado: valdemir.marques1925@gmail.com / Gestao@danca202558");
 
     app.listen(PORT, () => {
-      console.log(`🚀 SERVIDOR REPARADO: https://api-gestao-danca.onrender.com`);
+      console.log(`🚀 SISTEMA ONLINE NA PORTA ${PORT}`);
     });
 
   } catch (err) {
-    console.error("❌ Erro fatal no bootstrap:", err.message);
-    // Mantém o app vivo para o Render não dar erro de porta
+    console.error("❌ Erro Crítico:", err.message);
+    // Tenta manter o servidor vivo mesmo com erro
     if (!app.listening) app.listen(PORT);
   }
 }
