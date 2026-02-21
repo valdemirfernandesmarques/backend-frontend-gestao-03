@@ -6,18 +6,13 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ Configuração de CORS para evitar bloqueios no Frontend
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
+// ✅ Mantendo sua configuração de CORS e JSON
+app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 // ===============================================
-// 🛣️ IMPORTAÇÃO DE TODAS AS ROTAS (Mantendo integridade)
+// 🚦 REGISTRO DE TODAS AS ROTAS ORIGINAIS
 // ===============================================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -43,9 +38,6 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
-// ===============================================
-// 🚦 REGISTRO DAS ROTAS
-// ===============================================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
@@ -71,43 +63,50 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================================
-// 🛠️ BOOTSTRAP: REPARO DEFINITIVO DA TABELA TURMAS
+// 🛠️ BOOTSTRAP: REPARO E ESTABILIZAÇÃO
 // ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ ENGENHARIA: Iniciando reparo de emergência...");
+    console.log("🛠️ ENGENHARIA: Verificando integridade estrutural...");
     await db.sequelize.authenticate();
 
-    // 1️⃣ Forçar desligamento de travas para alteração estrutural
+    // 1️⃣ Desligar verificações para permitir alteração de colunas com dados presentes
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
-    // 2️⃣ Corrigir View que bloqueia o cadastro de professores
+    // 2️⃣ Corrigir View que causava erro no cadastro de professores
     await db.sequelize.query('DROP VIEW IF EXISTS professor');
 
-    // 3️⃣ INJEÇÃO MANUAL VIA SQL (Solução para o erro 1054)
-    // Se o Sequelize não consegue criar, nós forçamos via comando direto no MySQL
-    console.log("💉 Injetando colunas de horário na tabela Turmas...");
-    try {
-      await db.sequelize.query(`
-        ALTER TABLE Turmas 
-        ADD COLUMN IF NOT EXISTS horarioInicio TIME NULL,
-        ADD COLUMN IF NOT EXISTS horarioFim TIME NULL,
-        ADD COLUMN IF NOT EXISTS diaDaSemana VARCHAR(255) NULL;
-      `);
-      console.log("✅ Colunas injetadas com sucesso!");
-    } catch (sqlError) {
-      console.log("ℹ️ Nota: Colunas já existem ou precisam de reconstrução via sync.");
+    // 3️⃣ REPARO FORÇADO DA TABELA TURMAS (Solução Erro 1054)
+    // Usamos comandos individuais para garantir que cada coluna seja injetada se faltar
+    const tables = await db.sequelize.getQueryInterface().showAllTables();
+    if (tables.includes('Turmas')) {
+        console.log("💉 Verificando colunas na tabela Turmas...");
+        const columns = await db.sequelize.getQueryInterface().describeTable('Turmas');
+        
+        if (!columns.horarioInicio) {
+            await db.sequelize.query('ALTER TABLE Turmas ADD COLUMN horarioInicio TIME NULL AFTER nome');
+            console.log("✅ Coluna horarioInicio adicionada.");
+        }
+        if (!columns.horarioFim) {
+            await db.sequelize.query('ALTER TABLE Turmas ADD COLUMN horarioFim TIME NULL AFTER horarioInicio');
+            console.log("✅ Coluna horarioFim adicionada.");
+        }
+        if (!columns.diaDaSemana) {
+            await db.sequelize.query('ALTER TABLE Turmas ADD COLUMN diaDaSemana VARCHAR(255) NULL AFTER horarioFim');
+            console.log("✅ Coluna diaDaSemana adicionada.");
+        }
     }
 
-    // 4️⃣ Sincronização geral com alter (para não apagar dados existentes)
+    // 4️⃣ Sincronizar modelos sem apagar dados (alter: true)
     await db.sequelize.sync({ alter: true });
     
+    // 5️⃣ Reativar chaves estrangeiras
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
     console.log("✅ Banco de dados estabilizado.");
 
-    // 5️⃣ Garantir Escola 2 e Usuário Admin
+    // 6️⃣ Garantir Escola 2 e Vínculo do Admin
     await db.Escola.findOrCreate({
       where: { id: 2 },
       defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" }
@@ -117,7 +116,7 @@ async function bootstrap() {
     const user = await db.User.findOne({ where: { email: adminEmail } });
     if (user) {
       await user.update({ escolaId: 2 });
-      console.log("👤 Admin vinculado à Escola 2.");
+      console.log("👤 Admin verificado na Escola 2.");
     }
 
     app.listen(PORT, () => {
