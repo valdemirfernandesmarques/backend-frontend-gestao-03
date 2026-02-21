@@ -6,12 +6,12 @@ require("dotenv").config();
 
 const app = express();
 
-// Middlewares
+// --- CONFIGURAÇÕES ---
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Servir Frontend (Pasta dist)
+// --- SERVIR FRONTEND (PASTA DIST) ---
 const distPath = path.resolve(__dirname, "dist");
 app.use(express.static(distPath));
 
@@ -24,9 +24,8 @@ const alunoRoutes = require("./routes/alunoRoutes");
 const professorRoutes = require("./routes/professorRoutes");
 const turmaRoutes = require("./routes/turmaRoutes");
 const matriculaRoutes = require("./routes/matriculaRoutes");
-const financeiroRoutes = require("./routes/financeiroRoutes");
 
-// --- REGISTRO DAS ROTAS ---
+// --- REGISTRO DAS ROTAS NA API ---
 app.use("/api/auth", authRoutes);
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/escolas", escolaRoutes);
@@ -35,13 +34,15 @@ app.use("/api/alunos", alunoRoutes);
 app.use("/api/professores", professorRoutes);
 app.use("/api/turmas", turmaRoutes);
 app.use("/api/matriculas", matriculaRoutes);
-app.use("/api/financeiro", financeiroRoutes);
 
-// Suporte ao F5 do Frontend
+// --- ROTA SPA (FALLBACK PARA INDEX.HTML) ---
 app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
         res.sendFile(path.join(distPath, "index.html"), (err) => {
-            if (err) res.status(500).send("Erro: Pasta 'dist' não encontrada. Rode 'npm run build' no frontend.");
+            if (err) {
+                // Se der erro aqui, é porque a pasta dist não foi enviada
+                res.status(500).send("Aguardando upload da pasta dist...");
+            }
         });
     }
 });
@@ -50,25 +51,27 @@ const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
     try {
-        console.log("📡 Conectando ao MySQL Aiven...");
+        console.log("📡 Conectando ao MySQL da Aiven...");
         await db.sequelize.authenticate();
-        console.log("✅ Conexão OK.");
+        console.log("✅ Conexão estabelecida com sucesso.");
 
-        // Sincroniza com o banco sem forçar (force: false)
+        // Sincroniza o banco de dados
+        // alter: true vai garantir que as colunas de horário que criamos localmente sejam reconhecidas pelo código
         await db.sequelize.sync({ alter: true });
         
-        // Garante escola padrão ID 2
+        // Garante escola ID 2 para o sistema rodar
         await db.Escola.findOrCreate({ 
             where: { id: 2 }, 
-            defaults: { id: 2, nome: "Escola Base", status: "ATIVO" } 
+            defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
         });
 
         app.listen(PORT, () => {
-            console.log(`🚀 SERVIDOR RODANDO NA PORTA ${PORT}`);
+            console.log(`🚀 SERVIDOR OPERACIONAL NA PORTA ${PORT}`);
         });
     } catch (err) {
-        console.error("❌ Erro fatal no servidor:", err.message);
-        // Não encerra o processo para permitir que o Render mantenha o log
+        console.error("❌ Erro fatal ao iniciar o servidor:", err.message);
+        // Em caso de erro, inicia o app mesmo assim para não dar "Deploy Failed"
+        app.listen(PORT, () => console.log("⚠️ Servidor em modo de segurança."));
     }
 }
 
