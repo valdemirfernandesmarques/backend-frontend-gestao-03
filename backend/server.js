@@ -1,36 +1,36 @@
-const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
 
-const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 13908,
-    dialect: "mysql",
-    logging: false,
-    dialectOptions: { ssl: { require: true, rejectUnauthorized: false } }
+const db = require("./models"); // IMPORTA SOMENTE O INDEX.JS DA PASTA MODELS
+
+const app = express();
+
+// Middlewares
+app.use(cors());
+app.use(express.json());
+
+// Rota teste
+app.get("/", (req, res) => {
+    res.json({ message: "API rodando 🚀" });
 });
 
-const db = {};
+// IMPORTAÇÃO DAS ROTAS (se você tiver)
+// Exemplo:
+// const escolaRoutes = require("./routes/escolaRoutes");
+// app.use("/api/escolas", escolaRoutes);
 
-// AJUSTE: Adicionado "./models/" antes de cada nome de arquivo
-// Isso indica ao Node para procurar dentro da pasta models
-db.Escola = require("./models/Escola")(sequelize, DataTypes);
-db.Aluno = require("./models/Aluno")(sequelize, DataTypes);
-db.Professor = require("./models/Professor")(sequelize, DataTypes);
-db.Funcionario = require("./models/Funcionario")(sequelize, DataTypes);
-db.Modalidade = require("./models/Modalidade")(sequelize, DataTypes);
-db.Turma = require("./models/Turma")(sequelize, DataTypes);
-db.Matricula = require("./models/Matricula")(sequelize, DataTypes);
-db.Mensalidade = require("./models/Mensalidade")(sequelize, DataTypes);
-db.ProfessorModalidade = require("./models/ProfessorModalidade")(sequelize, DataTypes);
+// Sincroniza banco e inicia servidor
+db.sequelize.sync()
+    .then(() => {
+        console.log("Banco conectado com sucesso ✅");
 
-// Associações com verificação
-Object.keys(db).forEach((modelName) => {
-    if (db[modelName] && db[modelName].associate) {
-        db[modelName].associate(db);
-    }
-});
+        const PORT = process.env.PORT || 3000;
 
-db.sequelize = sequelize;
-db.Sequelize = Sequelize;
-
-module.exports = db;
+        app.listen(PORT, () => {
+            console.log(`Servidor rodando na porta ${PORT}`);
+        });
+    })
+    .catch((err) => {
+        console.error("Erro ao conectar no banco:", err);
+    });
