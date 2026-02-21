@@ -6,11 +6,12 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ CORS TOTALMENTE LIBERADO PARA ACABAR COM OS BLOQUEIOS
+// ✅ CORS TOTALMENTE LIBERADO PARA TESTES
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 }));
 
 app.use(express.json());
@@ -71,42 +72,54 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================================
-// 🛠️ INICIALIZAÇÃO SEGURA (BOOTSTRAP)
+// 🛠️ INICIALIZAÇÃO DO SERVIDOR (BOOTSTRAP)
 // ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
     await db.sequelize.authenticate();
-    console.log("📡 Banco de dados Conectado com sucesso.");
+    console.log("📡 Conectado ao MySQL da Aiven.");
 
-    // Sincroniza sem apagar nada (force: false)
-    // O 'alter: true' garante que colunas como 'horarioInicio' sejam criadas se sumirem
-    await db.sequelize.sync({ force: false, alter: true });
-    console.log("✅ Estrutura de tabelas sincronizada.");
+    // Sincroniza o banco sem apagar nada
+    await db.sequelize.sync({ alter: true });
+    console.log("✅ Tabelas sincronizadas.");
 
-    // Garante o Super Admin no banco limpo
-    const adminEmail = "valdemir.marques1925@gmail.com";
-    const adminExists = await db.User.findOne({ where: { email: adminEmail } });
-    
-    if (!adminExists) {
-      const hash = await bcrypt.hash("Gestao@danca202558", 10);
-      await db.User.create({
-        nome: "Super Admin",
-        email: adminEmail,
-        password: hash,
-        perfil: "SUPER_ADMIN",
-        escolaId: null
+    // 🛑 SOLUÇÃO PARA O ERRO 404 / 500 DA ESCOLA 2
+    // Vamos garantir que a Escola com ID 2 exista para o seu sistema parar de reclamar
+    const escola2 = await db.Escola.findByPk(2);
+    if (!escola2) {
+      console.log("🛠️ Criando escola ID 2 automaticamente para evitar erro de Chave Estrangeira...");
+      await db.Escola.create({
+        id: 2,
+        nome: "Escola de Dança Base",
+        email: "contato@base.com",
+        status: "ATIVO"
       });
-      console.log("👤 Super Admin restaurado.");
     }
 
+    // Garante o Super Admin
+    const adminEmail = "valdemir.marques1925@gmail.com";
+    const [user, created] = await db.User.findOrCreate({
+      where: { email: adminEmail },
+      defaults: {
+        nome: "Super Admin",
+        email: adminEmail,
+        password: await bcrypt.hash("Gestao@danca202558", 10),
+        perfil: "SUPER_ADMIN",
+        escolaId: null // Super admin não precisa de escola
+      }
+    });
+
+    if (created) console.log("👤 Super Admin criado.");
+
     app.listen(PORT, () => {
-      console.log(`🚀 Servidor rodando na porta ${PORT}`);
+      console.log(`🚀 Servidor rodando em: https://api-gestao-danca.onrender.com`);
     });
 
   } catch (err) {
-    console.error("❌ Erro no bootstrap:", err.message);
+    console.error("❌ Erro crítico:", err.message);
+    // Tenta subir o app mesmo com erro para não derrubar o Render
     app.listen(PORT);
   }
 }
