@@ -6,7 +6,7 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ CORS TOTALMENTE LIBERADO PARA DESTRAVAR O FRONTEND
+// ✅ CORS TOTALMENTE LIBERADO
 app.use(cors({
   origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -16,9 +16,9 @@ app.use(cors({
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// ===============================================
-// 🚀 IMPORTAÇÃO DAS ROTAS (ESTRUTURA COMPLETA)
-// ===============================================
+// ===============================
+// ===== IMPORTAÇÃO DAS ROTAS =====
+// ===============================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -43,9 +43,9 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
-// ===============================================
-// 🛣️ REGISTRO DAS ROTAS
-// ===============================================
+// ===============================
+// ===== REGISTRO DAS ROTAS =====
+// ===============================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
@@ -71,52 +71,45 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================================
-// 🛠️ SCRIPT DE REPARO E INICIALIZAÇÃO
+// 🛠️ INICIALIZAÇÃO SEGURA (PRESERVANDO DADOS)
 // ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ Iniciando Reparo de Emergência no Banco...");
     await db.sequelize.authenticate();
+    console.log("📡 Conectado ao MySQL.");
 
-    // 1️⃣ Forçar desativação de chaves estrangeiras (mata o erro 'Failed to open table')
-    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
-    
-    // 2️⃣ Forçar recriação completa (LIMPA O BANCO E CORRIGE ESTRUTURA)
-    await db.sequelize.sync({ force: true }); 
-    
-    // 3️⃣ Reativar chaves
-    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Banco de dados reconstruído do zero.");
+    // ✅ IMPORTANTE: Mantemos 'alter: true' para NÃO APAGAR o que você acabou de cadastrar
+    await db.sequelize.sync({ alter: true });
+    console.log("✅ Tabelas sincronizadas.");
 
-    // 4️⃣ Criar Escola com ID 2 (necessário para o seu frontend atual)
-    await db.Escola.create({
-      id: 2,
-      nome: "Escola de Dança Principal",
-      email: "contato@base.com",
-      status: "ATIVO"
+    // Garantir que a Escola 2 existe (ID base do seu sistema)
+    await db.Escola.findOrCreate({
+      where: { id: 2 },
+      defaults: {
+        id: 2,
+        nome: "Escola de Dança Base",
+        email: "contato@base.com",
+        status: "ATIVO"
+      }
     });
 
-    // 5️⃣ Criar Usuário Admin vinculado à Escola 2
-    const hash = await bcrypt.hash("Gestao@danca202558", 10);
-    await db.User.create({
-      nome: "Valdemir Admin",
-      email: "valdemir.marques1925@gmail.com",
-      password: hash,
-      perfil: "SUPER_ADMIN",
-      escolaId: 2
-    });
-
-    console.log("👤 Acesso Restaurado: valdemir.marques1925@gmail.com / Gestao@danca202558");
+    // Garantir que seu usuário está vinculado à Escola 2
+    const adminEmail = "valdemir.marques1925@gmail.com";
+    const user = await db.User.findOne({ where: { email: adminEmail } });
+    
+    if (user && user.escolaId !== 2) {
+      await user.update({ escolaId: 2 });
+      console.log("👤 Escola do Admin corrigida para ID 2.");
+    }
 
     app.listen(PORT, () => {
-      console.log(`🚀 SISTEMA ONLINE NA PORTA ${PORT}`);
+      console.log(`🚀 Servidor rodando em: https://api-gestao-danca.onrender.com`);
     });
 
   } catch (err) {
-    console.error("❌ Erro Crítico:", err.message);
-    // Tenta manter o servidor vivo mesmo com erro
+    console.error("❌ Erro no bootstrap:", err.message);
     if (!app.listening) app.listen(PORT);
   }
 }
