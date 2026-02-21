@@ -1,29 +1,19 @@
 const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 13908,
-    dialect: "mysql",
-    logging: false,
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false,
-      },
-    },
-  }
-);
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 13908,
+  dialect: "mysql",
+  logging: false,
+  dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+});
 
 const db = {};
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
 
-// Importação dos Modelos
+// Carregamento simples que seu sistema já usava
 db.Escola = require("./Escola")(sequelize, DataTypes);
 db.Aluno = require("./Aluno")(sequelize, DataTypes);
 db.Professor = require("./Professor")(sequelize, DataTypes);
@@ -34,12 +24,9 @@ db.Matricula = require("./Matricula")(sequelize, DataTypes);
 db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
 db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
 
-// --- BLOCO DE ASSOCIAÇÕES ---
-// Isso garante que o Sequelize saiba que a coluna existe e como se liga
-Object.keys(db).forEach((modelName) => {
-  if (db[modelName].associate) {
-    db[modelName].associate(db);
-  }
+// Ativa as associações
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) db[modelName].associate(db);
 });
 
 module.exports = db;
