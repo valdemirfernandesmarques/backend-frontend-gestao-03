@@ -6,81 +6,105 @@ require("dotenv").config();
 
 const app = express();
 
-app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
+// ✅ Configuração de CORS profissional
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// --- Importação de Rotas ---
+// ===============================================
+// 🛣️ REGISTRO DAS ROTAS (Importação e Uso)
+// ===============================================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const escolaRoutes = require("./routes/escolaRoutes");
 const modalidadeRoutes = require("./routes/modalidadeRoutes");
 const professorRoutes = require("./routes/professorRoutes");
 const turmaRoutes = require("./routes/turmaRoutes");
+const alunoRoutes = require("./routes/alunoRoutes");
 const matriculaRoutes = require("./routes/matriculaRoutes");
-// (Mantenha as demais importações que você já tem aqui...)
+const pagamentoRoutes = require("./routes/pagamentoRoutes");
+const financeiroRoutes = require("./routes/financeiroRoutes");
 
-// --- Registro de Rotas ---
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/escolas", escolaRoutes);
 app.use("/api/modalidades", modalidadeRoutes);
 app.use("/api/professores", professorRoutes);
 app.use("/api/turmas", turmaRoutes);
+app.use("/api/alunos", alunoRoutes);
 app.use("/api/matriculas", matriculaRoutes);
-// (Mantenha os demais app.use que você já tem aqui...)
+app.use("/api/pagamentos", pagamentoRoutes);
+app.use("/api/financeiro", financeiroRoutes);
 
+// ===============================================
+// 🛠️ BOOTSTRAP: REPARO DE BANCO E INICIALIZAÇÃO
+// ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ ENGENHARIA: Iniciando protocolo de recuperação total...");
+    console.log("🛠️ ENGENHARIA: Verificando integridade do banco...");
     await db.sequelize.authenticate();
+    console.log("📡 Conexão MySQL OK.");
 
-    // 1️⃣ DESATIVAR TUDO: Desliga as travas do MySQL para permitir a limpeza
+    // 1️⃣ Forçar desligamento de travas para permitir a correção de colunas
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
     
-    // 2️⃣ LIMPEZA DE CHOQUE: Remove a View problemática e as tabelas que estão impedindo o boot
-    console.log("🧹 Removendo View 'professor' e tabelas corrompidas...");
+    // 2️⃣ Limpeza de View fantasma (causadora do erro 500 no Professor)
     await db.sequelize.query('DROP VIEW IF EXISTS professor');
-    await db.sequelize.query('DROP TABLE IF EXISTS professor');
-    await db.sequelize.query('DROP TABLE IF EXISTS Turmas'); 
-    await db.sequelize.query('DROP TABLE IF EXISTS Matriculas');
-
-    // 3️⃣ RECONSTRUÇÃO: O Sequelize agora consegue criar as tabelas com as colunas novas (horarioInicio, etc)
-    // Usamos 'force: true' UMA ÚLTIMA VEZ para garantir que a estrutura esteja 100% limpa
-    await db.sequelize.sync({ force: true }); 
     
-    // 4️⃣ REATIVAR TRAVAS
+    // 3️⃣ SINCRONIZAÇÃO FORÇADA DE COLUNAS
+    // 'alter: true' vai injetar 'horarioInicio', 'horarioFim' etc., na tabela Turmas
+    await db.sequelize.sync({ alter: true });
+    console.log("✅ Colunas e tabelas sincronizadas.");
+    
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Estrutura de tabelas recriada com sucesso.");
 
-    // 5️⃣ POPULAR DADOS ESSENCIAIS (Escola e Admin)
-    await db.Escola.create({
-      id: 2,
-      nome: "Escola de Dança Base",
-      email: "contato@base.com",
-      status: "ATIVO"
+    // 4️⃣ GARANTIR ESCOLA ID 2 (Base do Sistema)
+    const [escola] = await db.Escola.findOrCreate({
+      where: { id: 2 },
+      defaults: { 
+        id: 2, 
+        nome: "Escola de Dança Base", 
+        email: "contato@base.com",
+        status: "ATIVO" 
+      }
     });
 
-    const hash = await bcrypt.hash("Gestao@danca202558", 10);
-    await db.User.create({
-      nome: "Valdemir Admin",
-      email: "valdemir.marques1925@gmail.com",
-      password: hash,
-      perfil: "SUPER_ADMIN",
-      escolaId: 2
-    });
-
-    console.log("👤 Banco pronto e Usuário Admin (Escola 2) criado.");
+    // 5️⃣ GARANTIR USUÁRIO ADMIN VINCULADO
+    const adminEmail = "valdemir.marques1925@gmail.com";
+    const user = await db.User.findOne({ where: { email: adminEmail } });
+    
+    if (!user) {
+      const hash = await bcrypt.hash("Gestao@danca202558", 10);
+      await db.User.create({
+        nome: "Valdemir Admin",
+        email: adminEmail,
+        password: hash,
+        perfil: "SUPER_ADMIN",
+        escolaId: 2
+      });
+      console.log("👤 Admin criado com sucesso.");
+    } else {
+      // Garante que o Admin existente pertença à Escola 2 para ver os dados
+      await user.update({ escolaId: 2 });
+      console.log("👤 Admin verificado e vinculado à Escola 2.");
+    }
 
     app.listen(PORT, () => {
-      console.log(`🚀 SISTEMA RECUPERADO NA PORTA ${PORT}`);
+      console.log("--------------------------------------------------");
+      console.log(`🚀 SERVIDOR ONLINE: https://api-gestao-danca.onrender.com`);
+      console.log("--------------------------------------------------");
     });
 
   } catch (err) {
-    console.error("❌ Erro Crítico no Bootstrap:", err.message);
-    // Se falhar, ainda tentamos subir o servidor para não travar o Render
+    console.error("❌ Erro fatal no bootstrap:", err.message);
+    // Mantém o processo vivo para o Render não dar erro de boot
     if (!app.listening) app.listen(PORT);
   }
 }
