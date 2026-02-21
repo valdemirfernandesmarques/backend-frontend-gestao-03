@@ -11,16 +11,16 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 
 const db = {};
 
-// Importação forçada
-db.Escola = require("./Escola")(sequelize, DataTypes);
-db.Aluno = require("./Aluno")(sequelize, DataTypes);
-db.Professor = require("./Professor")(sequelize, DataTypes);
-db.Funcionario = require("./Funcionario")(sequelize, DataTypes);
-db.Modalidade = require("./Modalidade")(sequelize, DataTypes);
-db.Turma = require("./Turma")(sequelize, DataTypes);
-db.Matricula = require("./Matricula")(sequelize, DataTypes);
-db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
-db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
+// Importação forçada AJUSTADA para a pasta models
+db.Escola = require("./models/Escola")(sequelize, DataTypes);
+db.Aluno = require("./models/Aluno")(sequelize, DataTypes);
+db.Professor = require("./models/Professor")(sequelize, DataTypes);
+db.Funcionario = require("./models/Funcionario")(sequelize, DataTypes);
+db.Modalidade = require("./models/Modalidade")(sequelize, DataTypes);
+db.Turma = require("./models/Turma")(sequelize, DataTypes);
+db.Matricula = require("./models/Matricula")(sequelize, DataTypes);
+db.Mensalidade = require("./models/Mensalidade")(sequelize, DataTypes);
+db.ProfessorModalidade = require("./models/ProfessorModalidade")(sequelize, DataTypes);
 
 // Associações com verificação
 Object.keys(db).forEach((modelName) => {
