@@ -6,33 +6,42 @@ require("dotenv").config();
 
 const app = express();
 
-// --- MIDDLEWARES ---
+// --- CONFIGURAÇÕES GERAIS ---
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// --- SERVIR FRONTEND (BUILD) ---
+// --- SERVIR FRONTEND ---
 const distPath = path.resolve(__dirname, "dist");
 app.use(express.static(distPath));
 
-// --- REGISTRO DE ROTAS API ---
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/ativacao", require("./routes/ativacaoRoutes"));
-app.use("/api/escolas", require("./routes/escolaRoutes"));
-app.use("/api/modalidades", require("./routes/modalidadeRoutes"));
-app.use("/api/alunos", require("./routes/alunoRoutes"));
-app.use("/api/professores", require("./routes/professorRoutes"));
-app.use("/api/turmas", require("./routes/turmaRoutes"));
-app.use("/api/matriculas", require("./routes/matriculaRoutes"));
+// --- IMPORTAÇÃO DE ROTAS ---
+const authRoutes = require("./routes/authRoutes");
+const ativacaoRoutes = require("./routes/ativacaoRoutes");
+const escolaRoutes = require("./routes/escolaRoutes");
+const modalidadeRoutes = require("./routes/modalidadeRoutes");
+const alunoRoutes = require("./routes/alunoRoutes");
+const professorRoutes = require("./routes/professorRoutes");
+const turmaRoutes = require("./routes/turmaRoutes");
+const matriculaRoutes = require("./routes/matriculaRoutes");
+const funcionarioRoutes = require("./routes/funcionarioRoutes"); // Rota de Funcionários adicionada
 
-// --- SUPORTE A ROTAS DO FRONTEND (SPA) ---
+// --- REGISTRO DE ROTAS API ---
+app.use("/api/auth", authRoutes);
+app.use("/api/ativacao", ativacaoRoutes);
+app.use("/api/escolas", escolaRoutes);
+app.use("/api/modalidades", modalidadeRoutes);
+app.use("/api/alunos", alunoRoutes);
+app.use("/api/professores", professorRoutes);
+app.use("/api/turmas", turmaRoutes);
+app.use("/api/matriculas", matriculaRoutes);
+app.use("/api/funcionarios", funcionarioRoutes); // Ativação da rota de Funcionários
+
+// Suporte ao F5 e Roteamento SPA
 app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-        const indexPath = path.join(distPath, "index.html");
-        res.sendFile(indexPath, (err) => {
-            if (err) {
-                res.status(200).send("🚀 Servidor Online. Aguardando sincronização de arquivos do frontend...");
-            }
+        res.sendFile(path.join(distPath, "index.html"), (err) => {
+            if (err) res.status(200).send("🚀 Servidor Operacional. Aguardando build...");
         });
     }
 });
@@ -46,26 +55,22 @@ async function bootstrap() {
         console.log("✅ Conexão estabelecida.");
 
         /**
-         * ATENÇÃO: alter: false é fundamental aqui.
-         * Isso impede que o Sequelize tente desfazer as correções manuais 
-         * que fizemos via script 'corrigir.js'.
+         * IMPORTANTE: alter: false preserva as mudanças manuais 
+         * que fizemos via script corrigir.js (Auto-increments e PKs)
          */
         await db.sequelize.sync({ alter: false });
-        console.log("✅ Tabelas sincronizadas com segurança.");
+        console.log("✅ Banco de dados sincronizado.");
         
-        // Garante que a escola padrão (ID 2) exista para o login e cadastros
+        // Garante escola ID 2 ativa para evitar erros de login/vincular dados
         await db.Escola.findOrCreate({ 
             where: { id: 2 }, 
             defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
         });
 
-        app.listen(PORT, () => {
-            console.log(`🚀 SERVIDOR OPERACIONAL NA PORTA ${PORT}`);
-        });
+        app.listen(PORT, () => console.log(`🚀 SERVIDOR OK NA PORTA ${PORT}`));
     } catch (err) {
-        console.error("❌ Erro fatal ao iniciar o servidor:", err.message);
-        // Mantém o processo vivo no Render mesmo em caso de erro na conexão inicial
-        app.listen(PORT, () => console.log("⚠️ Servidor em modo de recuperação."));
+        console.error("❌ Erro fatal:", err.message);
+        app.listen(PORT, () => console.log("⚠️ Iniciado em modo de recuperação."));
     }
 }
 
