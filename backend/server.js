@@ -6,15 +6,16 @@ require("dotenv").config();
 
 const app = express();
 
-// --- CONFIGURAÇÕES ---
+// --- CONFIGURAÇÕES GERAIS ---
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
+// --- SERVIR FRONTEND (BUILD) ---
 const distPath = path.resolve(__dirname, "dist");
 app.use(express.static(distPath));
 
-// --- REGISTRO DE ROTAS ---
+// --- REGISTRO DE TODAS AS ROTAS API ---
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/ativacao", require("./routes/ativacaoRoutes"));
 app.use("/api/escolas", require("./routes/escolaRoutes"));
@@ -25,11 +26,11 @@ app.use("/api/turmas", require("./routes/turmaRoutes"));
 app.use("/api/matriculas", require("./routes/matriculaRoutes"));
 app.use("/api/funcionarios", require("./routes/funcionarioRoutes"));
 
-// Rota SPA
+// Suporte ao F5 e Roteamento Frontend (SPA)
 app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
         res.sendFile(path.join(distPath, "index.html"), (err) => {
-            if (err) res.status(200).send("🚀 Servidor Online.");
+            if (err) res.status(200).send("🚀 Servidor Operacional. Carregando sistema...");
         });
     }
 });
@@ -40,31 +41,35 @@ async function bootstrap() {
     try {
         console.log("📡 Conectando ao MySQL Aiven...");
         await db.sequelize.authenticate();
-        
-        // --- HACK DE PROTEÇÃO DE AUTO-INCREMENTO ---
-        // Isso força o Sequelize a ignorar o ID nos INSERTs, deixando o banco gerar sozinho
-        const modelosParaProteger = ['Matricula', 'Mensalidade', 'Funcionario', 'Turma'];
-        modelosParaProteger.forEach(nome => {
-            if (db[nome] && db[nome].rawAttributes.id) {
-                db[nome].rawAttributes.id.autoIncrement = true;
-                db[nome].rawAttributes.id.primaryKey = true;
-                db[nome].rawAttributes.id.allowNull = false;
+        console.log("✅ Conexão estabelecida.");
+
+        /**
+         * BLINDAGEM DE MODELOS:
+         * Forçamos o Sequelize a entender que o ID é gerado pelo banco.
+         * Isso evita o erro 'Field id doesn't have a default value'.
+         */
+        const modelosCriticos = ['Matricula', 'Mensalidade', 'Funcionario', 'Turma', 'Aluno'];
+        modelosCriticos.forEach(m => {
+            if (db[m] && db[m].rawAttributes.id) {
+                db[m].rawAttributes.id.autoIncrement = true;
+                db[m].rawAttributes.id.allowNull = false;
             }
         });
 
-        // alter: false para não sobrescrever o que fizemos no script corrigir.js
+        // alter: false para preservar nossas correções manuais do script corrigir.js
         await db.sequelize.sync({ alter: false });
-        console.log("✅ Banco de dados sincronizado e blindado.");
+        console.log("✅ Banco de dados sincronizado e protegido.");
 
+        // Garante a existência da escola ID 2
         await db.Escola.findOrCreate({ 
             where: { id: 2 }, 
-            defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
+            defaults: { id: 2, nome: "Escola de Dança Gestão", status: "ATIVO" } 
         });
 
-        app.listen(PORT, () => console.log(`🚀 SERVIDOR OPERACIONAL NA PORTA ${PORT}`));
+        app.listen(PORT, () => console.log(`🚀 SERVIDOR TOTALMENTE OPERACIONAL NA PORTA ${PORT}`));
     } catch (err) {
-        console.error("❌ Erro fatal:", err.message);
-        app.listen(PORT, () => console.log("⚠️ Modo de segurança ativo."));
+        console.error("❌ Erro fatal no bootstrap:", err.message);
+        app.listen(PORT, () => console.log("⚠️ Iniciado em modo de segurança."));
     }
 }
 
