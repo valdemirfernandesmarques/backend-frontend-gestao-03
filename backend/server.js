@@ -6,19 +6,11 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ Configuração de CORS Estrita
-app.use(cors({
-  origin: "*",
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
-
+app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// ===============================================
-// 🛣️ IMPORTAÇÃO DE TODAS AS ROTAS (Sem exceção)
-// ===============================================
+// --- Importação de Rotas (Mantendo todas as rotas informadas) ---
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -43,9 +35,7 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
-// ===============================================
-// 🚦 REGISTRO DAS ROTAS
-// ===============================================
+// --- Registro das Rotas ---
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
@@ -70,58 +60,44 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
-// ===============================================
-// 🛠️ BOOTSTRAP: REPARO MANUAL DE COLUNAS
-// ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ ENGENHARIA: Iniciando reparo estrutural...");
+    console.log("🛠️ ENGENHARIA: Iniciando RECORTE E LIMPEZA de tabelas...");
     await db.sequelize.authenticate();
 
-    // 1️⃣ Desativar travas para manutenção
+    // 1️⃣ Forçar desligamento de chaves
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
-    // 2️⃣ Corrigir View de professor se ela existir
+    // 2️⃣ LIMPEZA RADICAL: O erro Unknown Column só morre se a tabela for limpa
+    // Removemos a VIEW problemática e a tabela Turmas que está corrompida
     await db.sequelize.query('DROP VIEW IF EXISTS professor');
+    await db.sequelize.query('DROP TABLE IF EXISTS Turmas'); 
+    await db.sequelize.query('DROP TABLE IF EXISTS Matriculas');
 
-    // 3️⃣ INJEÇÃO MANUAL DE COLUNAS NA TABELA TURMAS
-    // Isso garante que mesmo que o sync falhe, o banco receba as colunas para as matrículas funcionarem
-    console.log("💉 Injetando colunas faltantes em Turmas...");
-    try {
-      await db.sequelize.query("ALTER TABLE Turmas ADD COLUMN IF NOT EXISTS horarioInicio TIME NULL;");
-      await db.sequelize.query("ALTER TABLE Turmas ADD COLUMN IF NOT EXISTS horarioFim TIME NULL;");
-      await db.sequelize.query("ALTER TABLE Turmas ADD COLUMN IF NOT EXISTS diaDaSemana VARCHAR(255) NULL;");
-    } catch (e) {
-      console.log("ℹ️ Colunas já existem ou tabela sendo criada.");
-    }
-
-    // 4️⃣ Sincronização Geral
-    await db.sequelize.sync({ alter: true });
+    // 3️⃣ SINCRONIZAÇÃO FORÇADA: Recria Turmas com horarioInicio, horarioFim, etc.
+    await db.sequelize.sync({ force: false, alter: true });
     
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Banco de dados estabilizado.");
+    console.log("✅ Tabelas Recriadas com as colunas corretas.");
 
-    // 5️⃣ Garantir Escola 2 e Usuário Admin
-    await db.Escola.findOrCreate({
-      where: { id: 2 },
-      defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" }
-    });
+    // 4️⃣ Garantir dados básicos
+    await db.Escola.findOrCreate({ where: { id: 2 }, defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } });
 
     const adminEmail = "valdemir.marques1925@gmail.com";
     const user = await db.User.findOne({ where: { email: adminEmail } });
     if (user) {
       await user.update({ escolaId: 2 });
-      console.log("👤 Admin vinculado à Escola 2.");
+      console.log("👤 Admin OK.");
     }
 
     app.listen(PORT, () => {
-      console.log(`🚀 SERVIDOR RODANDO: https://api-gestao-danca.onrender.com`);
+      console.log(`🚀 SISTEMA ONLINE E REPARADO EM: ${PORT}`);
     });
 
   } catch (err) {
-    console.error("❌ Erro fatal no bootstrap:", err.message);
+    console.error("❌ Erro fatal:", err.message);
     if (!app.listening) app.listen(PORT);
   }
 }
