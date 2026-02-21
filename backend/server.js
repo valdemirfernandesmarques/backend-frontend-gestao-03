@@ -6,11 +6,12 @@ require("dotenv").config();
 
 const app = express();
 
+// Configuração de CORS e JSON
 app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// --- TODAS AS SUAS ROTAS MANTIDAS INTEGRALMENTE ---
+// --- REGISTRO DE ROTAS (Mantendo integridade total) ---
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -63,36 +64,42 @@ const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ OPERAÇÃO DE EMERGÊNCIA: Resetando tabelas corrompidas...");
+    console.log("🛠️ INICIANDO REPARO ESTRUTURAL...");
     await db.sequelize.authenticate();
 
-    // 1️⃣ DESATIVAR TUDO
+    // 1️⃣ Desativar travas de chaves estrangeiras
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
-    // 2️⃣ APAGAR AS TABELAS QUE ESTÃO TRAVANDO O SISTEMA
-    // Isso é necessário porque o MySQL se recusa a adicionar a coluna 'horarioInicio' com dados lá.
-    await db.sequelize.query('DROP TABLE IF EXISTS Matriculas');
-    await db.sequelize.query('DROP TABLE IF EXISTS Turmas');
-    await db.sequelize.query('DROP VIEW IF EXISTS professor');
+    // 2️⃣ Tentar injetar as colunas via SQL Puro (isso resolve o erro 1054)
+    // Usamos TRY/CATCH individual para cada coluna para não travar se ela já existir
+    const columns = ["horarioInicio TIME", "horarioFim TIME", "diaDaSemana VARCHAR(255)"];
+    for (const col of columns) {
+        try {
+            await db.sequelize.query(`ALTER TABLE Turmas ADD COLUMN ${col} NULL;`);
+            console.log(`✅ Coluna ${col} adicionada.`);
+        } catch (e) {
+            console.log(`ℹ️ Coluna ${col.split(' ')[0]} já existe ou ignorada.`);
+        }
+    }
 
-    // 3️⃣ RECRIAR TUDO LIMPO
-    // Aqui o Sequelize vai criar as tabelas novas com horarioInicio, horarioFim, etc.
-    await db.sequelize.sync({ force: false });
+    // 3️⃣ Sincronizar modelos (alter: true para não apagar dados)
+    await db.sequelize.sync({ alter: true });
     
+    // 4️⃣ Reativar chaves
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Tabelas Turmas e Matriculas reconstruídas do zero.");
+    console.log("✅ Banco de dados estabilizado.");
 
-    // 4️⃣ GARANTIR ADMIN E ESCOLA
-    await db.Escola.findOrCreate({ where: { id: 2 }, defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } });
+    // 5️⃣ Garantir Escola e Admin
+    await db.Escola.findOrCreate({ where: { id: 2 }, defaults: { id: 2, nome: "Escola Base", status: "ATIVO" } });
     const user = await db.User.findOne({ where: { email: "valdemir.marques1925@gmail.com" } });
     if (user) await user.update({ escolaId: 2 });
 
     app.listen(PORT, () => {
-      console.log(`🚀 SISTEMA RESETADO E ONLINE`);
+      console.log(`🚀 SERVIDOR RODANDO: https://api-gestao-danca.onrender.com`);
     });
 
   } catch (err) {
-    console.error("❌ ERRO:", err.message);
+    console.error("❌ Erro fatal:", err.message);
     if (!app.listening) app.listen(PORT);
   }
 }
