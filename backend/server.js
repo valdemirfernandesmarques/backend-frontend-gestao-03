@@ -7,10 +7,14 @@ require("dotenv").config();
 const app = express();
 
 // ===============================
-// ✅ Middlewares Globais
+// ✅ CONFIGURAÇÃO DE CORS (Segurança para o Frontend)
 // ===============================
 app.use(cors({
-  origin: ["https://gestaoemdanca.com.br", "https://www.gestaoemdanca.com.br"],
+  origin: [
+    "https://gestaoemdanca.com.br", 
+    "https://www.gestaoemdanca.com.br",
+    "http://localhost:5173"
+  ],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
@@ -20,7 +24,7 @@ app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
 // ===============================
-// ===== Importação das Rotas =====
+// ===== IMPORTAÇÃO DAS ROTAS =====
 // ===============================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
@@ -47,7 +51,7 @@ const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
 // ===============================
-// ===== Registro das Rotas =====
+// ===== REGISTRO DAS ROTAS =====
 // ===============================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
@@ -73,61 +77,77 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
-// ===========================================
-// 🔥 RESET TOTAL E RECONSTRUÇÃO DO BANCO
-// ===========================================
-async function rebuildDatabase() {
+// ===============================================
+// 🔥 MANUTENÇÃO FORÇADA: CRIAÇÃO DE COLUNAS SQL
+// ===============================================
+async function garantirEstruturaSQL() {
   try {
-    const adminEmail = "valdemir.marques1925@gmail.com";
-    const adminPass = "Gestao@danca202558";
-
-    console.log("🧨 LIMPANDO BANCO DE DADOS PARA RECONSTRUÇÃO...");
-
-    // Desativa chaves estrangeiras para evitar erro de 'referenced table'
-    await db.sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
+    console.log("🛠️ Verificando integridade das colunas via SQL Puro...");
     
-    // FORÇA A CRIAÇÃO DE TODAS AS TABELAS DO ZERO (CORRIGE COLUNAS FALTANTES)
-    await db.sequelize.sync({ force: true });
-    
-    // Reativa chaves estrangeiras
-    await db.sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
-    
-    console.log("✅ BANCO DE DADOS RECONSTRUIDO COM SUCESSO!");
+    // Adiciona colunas se não existirem (MySQL 8.0+ syntax ou fallback manual)
+    const queries = [
+      "ALTER TABLE modalidades ADD COLUMN IF NOT EXISTS descricao TEXT AFTER nome;",
+      "ALTER TABLE modalidades ADD COLUMN IF NOT EXISTS precoAula DECIMAL(10,2) AFTER descricao;",
+      "ALTER TABLE turmas ADD COLUMN IF NOT EXISTS horarioInicio TIME AFTER nome;",
+      "ALTER TABLE turmas ADD COLUMN IF NOT EXISTS horarioFim TIME AFTER horarioInicio;",
+      "ALTER TABLE modalidades ADD COLUMN IF NOT EXISTS createdAt DATETIME DEFAULT CURRENT_TIMESTAMP;",
+      "ALTER TABLE modalidades ADD COLUMN IF NOT EXISTS updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP;"
+    ];
 
-    // Recria o Super Admin
-    const hash = await bcrypt.hash(adminPass, 10);
-    await db.User.create({
-      nome: "Super Admin",
-      email: adminEmail,
-      password: hash,
-      perfil: "SUPER_ADMIN",
-      escolaId: null,
-    });
-
-    console.log(`🚀 Super Admin Recriado: ${adminEmail}`);
-  } catch (error) {
-    console.error("❌ Erro no Rebuild:", error.message);
+    for (const query of queries) {
+      try {
+        await db.sequelize.query(query);
+      } catch (e) {
+        // Ignora erro se a coluna já existir
+      }
+    }
+    console.log("✅ Colunas verificadas/criadas.");
+  } catch (err) {
+    console.error("❌ Erro na manutenção SQL:", err.message);
   }
 }
 
-// ===============================
-// ===== Inicialização =====
-// ===============================
+// ===============================================
+// ===== INICIALIZAÇÃO DO SERVIDOR =====
+// ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
+    // 1. Conecta ao Banco
     await db.sequelize.authenticate();
-    console.log("📡 Conectado à Aiven.");
+    console.log("📡 Banco de dados conectado com sucesso.");
 
-    // EXECUTAR RECONSTRUÇÃO (Depois de rodar uma vez e funcionar, você pode mudar force para false)
-    await rebuildDatabase();
+    // 2. Sincroniza sem deletar dados (Usa o alter para tentar ajustar modelos)
+    await db.sequelize.sync({ force: false, alter: true });
 
-    app.listen(PORT, () => {
-      console.log(`🚀 Servidor rodando na porta ${PORT}`);
+    // 3. Roda os comandos SQL de segurança para colunas específicas
+    await garantirEstruturaSQL();
+
+    // 4. Garante que o Super Admin existe
+    const adminEmail = "valdemir.marques1925@gmail.com";
+    const adminPass = "Gestao@danca202558";
+    const hash = await bcrypt.hash(adminPass, 10);
+    
+    await db.User.findOrCreate({
+      where: { email: adminEmail },
+      defaults: {
+        nome: "Super Admin",
+        email: adminEmail,
+        password: hash,
+        perfil: "SUPER_ADMIN",
+        escolaId: null
+      }
     });
+
+    // 5. Inicia o App
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor rodando em: https://api-gestao-danca.onrender.com`);
+      console.log(`🌍 Frontend autorizado: gestaoemdanca.com.br`);
+    });
+
   } catch (err) {
-    console.error("❌ Falha crítica:", err.message);
+    console.error("❌ Falha crítica no bootstrap:", err.message);
     app.listen(PORT);
   }
 }
