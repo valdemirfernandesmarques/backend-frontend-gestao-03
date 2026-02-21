@@ -6,13 +6,13 @@ require("dotenv").config();
 
 const app = express();
 
-// Configurações e Middlewares
-app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
+// --- CONFIGURAÇÕES DE MIDDLEWARE ---
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// --- SERVIR FRONTEND (CRUCIAL PARA O RENDER) ---
-// Isso evita o erro "no such file or directory, stat '.../dist/index.html'"
+// --- SERVIR FRONTEND (ESSENCIAL PARA O RENDER) ---
+// Resolve o erro de diretório (ENOENT) ao buscar o index.html
 const distPath = path.resolve(__dirname, "dist");
 app.use(express.static(distPath));
 
@@ -25,8 +25,11 @@ const alunoRoutes = require("./routes/alunoRoutes");
 const professorRoutes = require("./routes/professorRoutes");
 const turmaRoutes = require("./routes/turmaRoutes");
 const matriculaRoutes = require("./routes/matriculaRoutes");
+const mensalidadeRoutes = require("./routes/mensalidadeRoutes");
+const financeiroRoutes = require("./routes/financeiroRoutes");
 
 // --- REGISTRO DAS ROTAS NA API ---
+// Estas rotas devem bater com as chamadas do seu Frontend (Ex: /api/ativacao)
 app.use("/api/auth", authRoutes);
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/escolas", escolaRoutes);
@@ -35,12 +38,18 @@ app.use("/api/alunos", alunoRoutes);
 app.use("/api/professores", professorRoutes);
 app.use("/api/turmas", turmaRoutes);
 app.use("/api/matriculas", matriculaRoutes);
+app.use("/api/mensalidades", mensalidadeRoutes);
+app.use("/api/financeiro", financeiroRoutes);
 
-// --- ROTA SPA (FALLBACK PARA INDEX.HTML) ---
-// Garante que o usuário consiga navegar pelas rotas do site sem erro 404
+// --- SUPORTE AO ROTEAMENTO DO FRONTEND (SPA) ---
+// Garante que se o usuário der F5 em qualquer página, o site não dê 404
 app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-        res.sendFile(path.join(distPath, "index.html"));
+        res.sendFile(path.join(distPath, "index.html"), (err) => {
+            if (err) {
+                res.status(500).send("Erro: A pasta 'dist' não foi encontrada. Certifique-se de rodar o build do frontend e mover a pasta para cá.");
+            }
+        });
     }
 });
 
@@ -48,24 +57,26 @@ const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
     try {
-        console.log("📡 Conectando ao MySQL da Aiven...");
+        console.log("📡 Iniciando conexão com o MySQL na Aiven...");
         await db.sequelize.authenticate();
-        console.log("✅ Conexão estabelecida.");
+        console.log("✅ Conexão com o banco de dados estabelecida.");
 
-        // Sincroniza o banco sem apagar nada (agora com as colunas já criadas!)
+        // Sincroniza o banco de dados (alter: true tenta criar colunas faltantes)
         await db.sequelize.sync({ alter: true });
         
-        // Garante escola ID 2 para o sistema rodar
+        // Garante que a escola padrão (ID 2) exista para o sistema não travar no login
         await db.Escola.findOrCreate({ 
             where: { id: 2 }, 
             defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
         });
 
         app.listen(PORT, () => {
-            console.log(`🚀 SERVIDOR OPERACIONAL NA PORTA ${PORT}`);
+            console.log(`🚀 SERVIDOR ONLINE NA PORTA ${PORT}`);
+            console.log(`🔗 Local: http://localhost:${PORT}`);
         });
     } catch (err) {
         console.error("❌ Erro fatal ao iniciar o servidor:", err.message);
+        process.exit(1);
     }
 }
 
