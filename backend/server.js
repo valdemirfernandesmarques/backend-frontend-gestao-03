@@ -6,17 +6,22 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ CORS TOTALMENTE ABERTO PARA TESTE
+// ===============================
+// ✅ CONFIGURAÇÃO DE CORS
+// ===============================
 app.use(cors({
-  origin: "*",
+  origin: ["https://gestaoemdanca.com.br", "https://www.gestaoemdanca.com.br"],
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization"],
+  credentials: true
 }));
 
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
+// ===============================
 // ===== IMPORTAÇÃO DAS ROTAS =====
+// ===============================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -41,7 +46,9 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
+// ===============================
 // ===== REGISTRO DAS ROTAS =====
+// ===============================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
@@ -66,35 +73,27 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
-// =========================================================
-// 🔥 OPERAÇÃO DE LIMPEZA PROFUNDA NO BANCO (SQL PURO)
-// =========================================================
-async function limpezaProfundaBanco() {
+// ===============================================
+// 🔥 COMANDO DE EMERGÊNCIA: RESET TOTAL DO BANCO
+// ===============================================
+async function resetBancoDeDados() {
   try {
-    console.log("🧨 Iniciando Limpeza Profunda...");
-
-    // 1. Desativar verificação de chaves estrangeiras
-    await db.sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
-
-    // 2. Apagar tabelas que estão dando erro de coluna
-    const tabelasParaResetar = ['Matriculas', 'Turmas', 'modalidades', 'Alunos', 'Escolas', 'Users'];
-    for (const tabela of tabelasParaResetar) {
-        await db.sequelize.query(`DROP TABLE IF EXISTS ${tabela};`);
-        console.log(`🗑️ Tabela ${tabela} removida.`);
-    }
-
-    // 3. Recriar tudo do zero com a estrutura correta do código
-    await db.sequelize.sync({ force: true });
-    console.log("✅ Tabelas recriadas com sucesso!");
-
-    // 4. Reativar chaves estrangeiras
-    await db.sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
-
-    // 5. Recriar o Super Admin
-    const adminEmail = "valdemir.marques1925@gmail.com";
-    const adminPass = "Gestao@danca202558";
-    const hash = await bcrypt.hash(adminPass, 10);
+    console.log("⚠️ ATENÇÃO: Iniciando destruição e recriação das tabelas...");
     
+    // Desliga as travas de segurança do MySQL
+    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
+    
+    // Sincroniza forçando a exclusão de tudo (limpa o lixo da Aiven)
+    await db.sequelize.sync({ force: true });
+    
+    // Religação das travas
+    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');
+    
+    console.log("✅ Banco de dados reconstruído do zero com sucesso!");
+
+    // Recria o Super Admin inicial
+    const adminEmail = "valdemir.marques1925@gmail.com";
+    const hash = await bcrypt.hash("Gestao@danca202558", 10);
     await db.User.create({
       nome: "Super Admin",
       email: adminEmail,
@@ -102,30 +101,31 @@ async function limpezaProfundaBanco() {
       perfil: "SUPER_ADMIN",
       escolaId: null
     });
-    console.log("🚀 Super Admin restaurado.");
+    console.log("👤 Super Admin recriado.");
 
   } catch (error) {
-    console.error("❌ Erro na Limpeza Profunda:", error.message);
+    console.error("❌ Erro no reset do banco:", error.message);
   }
 }
 
+// ===============================
 // ===== INICIALIZAÇÃO =====
+// ===============================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
     await db.sequelize.authenticate();
-    console.log("📡 Conectado à Aiven.");
+    console.log("📡 Conectado ao MySQL da Aiven.");
 
-    // EXECUTAR A LIMPEZA (Só precisa rodar uma vez)
-    await limpezaProfundaBanco();
+    // RODAR O RESET (Uma única vez para consertar o banco)
+    await resetBancoDeDados();
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
     });
   } catch (err) {
-    console.error("❌ Falha crítica:", err.message);
-    app.listen(PORT);
+    console.error("❌ Erro ao iniciar servidor:", err.message);
   }
 }
 
