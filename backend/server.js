@@ -74,42 +74,39 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===========================================
-// 🔥 CORREÇÃO FORÇADA DE COLUNAS (SQL PURO)
+// 🔥 RESET TOTAL E RECONSTRUÇÃO DO BANCO
 // ===========================================
-async function realizarManutencaoBanco() {
+async function rebuildDatabase() {
   try {
-    console.log("🛠️ Verificando e criando colunas faltantes manualmente...");
+    const adminEmail = "valdemir.marques1925@gmail.com";
+    const adminPass = "Gestao@danca202558";
 
-    // Tenta adicionar a coluna 'descricao' na tabela modalidades
-    try {
-      await db.sequelize.query("ALTER TABLE modalidades ADD COLUMN descricao TEXT AFTER nome;");
-      console.log("✅ Coluna 'descricao' adicionada em modalidades.");
-    } catch (e) {
-      console.log("ℹ️ Coluna 'descricao' já existe ou não pôde ser adicionada.");
-    }
+    console.log("🧨 LIMPANDO BANCO DE DADOS PARA RECONSTRUÇÃO...");
 
-    // Tenta adicionar as colunas de horário na tabela turmas
-    try {
-      await db.sequelize.query("ALTER TABLE turmas ADD COLUMN horarioInicio TIME AFTER nome;");
-      await db.sequelize.query("ALTER TABLE turmas ADD COLUMN horarioFim TIME AFTER horarioInicio;");
-      console.log("✅ Colunas de horário adicionadas em turmas.");
-    } catch (e) {
-      console.log("ℹ️ Colunas de horário já existem em turmas.");
-    }
+    // Desativa chaves estrangeiras para evitar erro de 'referenced table'
+    await db.sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
+    
+    // FORÇA A CRIAÇÃO DE TODAS AS TABELAS DO ZERO (CORRIGE COLUNAS FALTANTES)
+    await db.sequelize.sync({ force: true });
+    
+    // Reativa chaves estrangeiras
+    await db.sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
+    
+    console.log("✅ BANCO DE DADOS RECONSTRUIDO COM SUCESSO!");
 
-    // Tenta adicionar a coluna 'precoAula' se não existir
-    try {
-        await db.sequelize.query("ALTER TABLE modalidades ADD COLUMN precoAula DECIMAL(10,2) AFTER descricao;");
-        console.log("✅ Coluna 'precoAula' adicionada.");
-    } catch (e) {
-        console.log("ℹ️ Coluna 'precoAula' já existe.");
-    }
+    // Recria o Super Admin
+    const hash = await bcrypt.hash(adminPass, 10);
+    await db.User.create({
+      nome: "Super Admin",
+      email: adminEmail,
+      password: hash,
+      perfil: "SUPER_ADMIN",
+      escolaId: null,
+    });
 
-    // Sincronização final leve
-    await db.sequelize.sync({ alter: false });
-
+    console.log(`🚀 Super Admin Recriado: ${adminEmail}`);
   } catch (error) {
-    console.error("⚠️ Erro na manutenção:", error.message);
+    console.error("❌ Erro no Rebuild:", error.message);
   }
 }
 
@@ -121,13 +118,10 @@ const PORT = process.env.PORT || 10000;
 async function bootstrap() {
   try {
     await db.sequelize.authenticate();
-    console.log("📡 Banco Conectado.");
+    console.log("📡 Conectado à Aiven.");
 
-    // Remove a View problemática se houver
-    await db.sequelize.query("DROP VIEW IF EXISTS Escolas;");
-    
-    // Roda a manutenção de colunas antes de subir o servidor
-    await realizarManutencaoBanco();
+    // EXECUTAR RECONSTRUÇÃO (Depois de rodar uma vez e funcionar, você pode mudar force para false)
+    await rebuildDatabase();
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
