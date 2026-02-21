@@ -6,20 +6,17 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ CORS TOTALMENTE LIBERADO PARA TESTES
+// ✅ CORS configurado para seu domínio e local
 app.use(cors({
-  origin: "*",
+  origin: "*", 
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// ===============================
 // ===== IMPORTAÇÃO DAS ROTAS =====
-// ===============================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -44,9 +41,7 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
-// ===============================
 // ===== REGISTRO DAS ROTAS =====
-// ===============================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
@@ -72,54 +67,63 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================================
-// 🛠️ INICIALIZAÇÃO DO SERVIDOR (BOOTSTRAP)
+// 🛠️ INICIALIZAÇÃO E REPARO DE DADOS
 // ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
     await db.sequelize.authenticate();
-    console.log("📡 Conectado ao MySQL da Aiven.");
+    console.log("📡 Conexão com MySQL estabelecida.");
 
-    // Sincroniza o banco sem apagar nada
+    // Sincroniza sem apagar dados atuais
     await db.sequelize.sync({ alter: true });
     console.log("✅ Tabelas sincronizadas.");
 
-    // 🛑 SOLUÇÃO PARA O ERRO 404 / 500 DA ESCOLA 2
-    // Vamos garantir que a Escola com ID 2 exista para o seu sistema parar de reclamar
-    const escola2 = await db.Escola.findByPk(2);
-    if (!escola2) {
-      console.log("🛠️ Criando escola ID 2 automaticamente para evitar erro de Chave Estrangeira...");
-      await db.Escola.create({
+    // 1️⃣ GARANTIR QUE A ESCOLA ID 2 EXISTA
+    // Isso evita o erro de Chave Estrangeira (ForeignKeyConstraintError)
+    const [escola] = await db.Escola.findOrCreate({
+      where: { id: 2 },
+      defaults: {
         id: 2,
-        nome: "Escola de Dança Base",
-        email: "contato@base.com",
+        nome: "Escola de Dança Principal",
+        email: "contato@gestaoemdanca.com.br",
         status: "ATIVO"
-      });
-    }
+      }
+    });
+    console.log("🏫 Verificação de Escola ID 2: OK.");
 
-    // Garante o Super Admin
+    // 2️⃣ GARANTIR QUE O SEU USUÁRIO EXISTA E ESTEJA NA ESCOLA 2
     const adminEmail = "valdemir.marques1925@gmail.com";
+    const passwordHash = await bcrypt.hash("Gestao@danca202558", 10);
+
     const [user, created] = await db.User.findOrCreate({
       where: { email: adminEmail },
       defaults: {
-        nome: "Super Admin",
+        nome: "Valdemir Admin",
         email: adminEmail,
-        password: await bcrypt.hash("Gestao@danca202558", 10),
+        password: passwordHash,
         perfil: "SUPER_ADMIN",
-        escolaId: null // Super admin não precisa de escola
+        escolaId: 2 // Vincula você à escola 2 para que suas criações funcionem
       }
     });
 
-    if (created) console.log("👤 Super Admin criado.");
+    // Se o usuário já existia mas estava sem escolaId, atualizamos agora
+    if (!created && user.escolaId !== 2) {
+      await user.update({ escolaId: 2 });
+      console.log("👤 Usuário atualizado para Escola ID 2.");
+    } else if (created) {
+      console.log("👤 Usuário Super Admin criado e vinculado à Escola 2.");
+    }
 
     app.listen(PORT, () => {
-      console.log(`🚀 Servidor rodando em: https://api-gestao-danca.onrender.com`);
+      console.log("--------------------------------------------------");
+      console.log(`🚀 SERVIDOR ONLINE NA PORTA ${PORT}`);
+      console.log("--------------------------------------------------");
     });
 
   } catch (err) {
-    console.error("❌ Erro crítico:", err.message);
-    // Tenta subir o app mesmo com erro para não derrubar o Render
+    console.error("❌ Erro no bootstrap:", err.message);
     app.listen(PORT);
   }
 }
