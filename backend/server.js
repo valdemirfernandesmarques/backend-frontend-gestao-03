@@ -6,16 +6,16 @@ require("dotenv").config();
 
 const app = express();
 
-// --- CONFIGURAÇÕES ---
+// Middlewares
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// --- SERVIR FRONTEND (PASTA DIST) ---
+// Frontend
 const distPath = path.resolve(__dirname, "dist");
 app.use(express.static(distPath));
 
-// --- IMPORTAÇÃO DE TODAS AS ROTAS ---
+// Rotas
 const authRoutes = require("./routes/authRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
 const escolaRoutes = require("./routes/escolaRoutes");
@@ -25,7 +25,6 @@ const professorRoutes = require("./routes/professorRoutes");
 const turmaRoutes = require("./routes/turmaRoutes");
 const matriculaRoutes = require("./routes/matriculaRoutes");
 
-// --- REGISTRO DAS ROTAS NA API ---
 app.use("/api/auth", authRoutes);
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/escolas", escolaRoutes);
@@ -35,15 +34,9 @@ app.use("/api/professores", professorRoutes);
 app.use("/api/turmas", turmaRoutes);
 app.use("/api/matriculas", matriculaRoutes);
 
-// --- ROTA SPA (FALLBACK PARA INDEX.HTML) ---
 app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-        res.sendFile(path.join(distPath, "index.html"), (err) => {
-            if (err) {
-                // Se der erro aqui, é porque a pasta dist não foi enviada
-                res.status(500).send("Aguardando upload da pasta dist...");
-            }
-        });
+        res.sendFile(path.join(distPath, "index.html"));
     }
 });
 
@@ -51,27 +44,29 @@ const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
     try {
-        console.log("📡 Conectando ao MySQL da Aiven...");
+        console.log("📡 Conectando ao MySQL Aiven...");
         await db.sequelize.authenticate();
-        console.log("✅ Conexão estabelecida com sucesso.");
+        console.log("✅ Conexão estabelecida.");
 
-        // Sincroniza o banco de dados
-        // alter: true vai garantir que as colunas de horário que criamos localmente sejam reconhecidas pelo código
-        await db.sequelize.sync({ alter: true });
+        // Força a sincronização, mas captura erros para não derrubar o servidor
+        try {
+            await db.sequelize.sync({ alter: true });
+            console.log("✅ Tabelas sincronizadas.");
+        } catch (syncErr) {
+            console.error("⚠️ Aviso: Erro na sincronização automática, mas seguindo adiante...");
+        }
         
-        // Garante escola ID 2 para o sistema rodar
+        // Garante escola ID 2
         await db.Escola.findOrCreate({ 
             where: { id: 2 }, 
             defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
         });
 
-        app.listen(PORT, () => {
-            console.log(`🚀 SERVIDOR OPERACIONAL NA PORTA ${PORT}`);
-        });
+        app.listen(PORT, () => console.log(`🚀 SERVIDOR OK NA PORTA ${PORT}`));
     } catch (err) {
-        console.error("❌ Erro fatal ao iniciar o servidor:", err.message);
-        // Em caso de erro, inicia o app mesmo assim para não dar "Deploy Failed"
-        app.listen(PORT, () => console.log("⚠️ Servidor em modo de segurança."));
+        console.error("❌ Erro fatal:", err.message);
+        // Tenta rodar o servidor mesmo com erro de DB para o Render não dar 'Exited Early'
+        app.listen(PORT, () => console.log("⚠️ Servidor rodando em modo de emergência."));
     }
 }
 
