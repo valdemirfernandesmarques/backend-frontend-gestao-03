@@ -78,68 +78,68 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===========================================
-// 🔥 RESET E RECRIAÇÃO DO SUPER ADMIN
+// 🔥 AJUSTE DE ESTRUTURA E SUPER ADMIN
 // ===========================================
-async function resetarSuperAdmin() {
+async function ajustarEstruturaBanco() {
   try {
     const adminEmail = "valdemir.marques1925@gmail.com";
     const adminPass = "Gestao@danca202558";
 
-    if (!db.User) {
-        console.error("❌ Modelo User não carregado.");
-        return;
-    }
+    console.log("🛠️ Iniciando sincronização com 'alter: true' para corrigir colunas...");
+    
+    // O 'alter: true' verifica o que falta (como a coluna 'descricao') e adiciona
+    await db.sequelize.sync({ alter: true });
+    
+    console.log("✅ Tabelas atualizadas com sucesso!");
 
-    // 1. Elimina o utilizador existente para garantir limpeza total
-    await db.User.destroy({ where: { email: adminEmail } });
-    console.log(`🧹 Antigo Super Admin removido: ${adminEmail}`);
-
-    // 2. Cria o novo hash
+    // Garante que o Super Admin está correto
     const hash = await bcrypt.hash(adminPass, 10);
-
-    // 3. Cria o utilizador do zero
-    await db.User.create({
-      nome: "Super Admin",
-      email: adminEmail,
-      password: hash,
-      perfil: "SUPER_ADMIN",
-      escolaId: null,
+    const [user, created] = await db.User.findOrCreate({
+      where: { email: adminEmail },
+      defaults: {
+        nome: "Super Admin",
+        email: adminEmail,
+        password: hash,
+        perfil: "SUPER_ADMIN",
+        escolaId: null,
+      }
     });
 
-    console.log(`🚀 NOVO Super Admin criado com sucesso: ${adminEmail}`);
-    console.log(`🔑 Senha definida para: ${adminPass}`);
+    if (!created) {
+      await user.update({ password: hash });
+      console.log(`ℹ️ Credenciais do Super Admin sincronizadas.`);
+    } else {
+      console.log(`✅ Super Admin criado no reset.`);
+    }
+
   } catch (error) {
-    console.error("❌ Erro ao resetar Super Admin:", error.message);
+    console.error("❌ Erro durante ajuste do banco:", error.message);
+    // Se der erro de Foreign Key, o código abaixo ajuda a ignorar e subir o servidor
   }
 }
 
 // ===============================
-// ===== Inicialização =====
+// ===== Inicialização do Servidor =====
 // ===============================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
     await db.sequelize.authenticate();
-    console.log("📡 Banco de Dados Conectado.");
+    console.log("📡 Conexão com MySQL estabelecida.");
 
-    // Limpeza de VIEWs se ainda existirem
+    // Executa a limpeza de possíveis Views e atualiza colunas
     await db.sequelize.query("DROP VIEW IF EXISTS Escolas;");
-    
-    // Garante que as tabelas existem antes de criar o admin
-    await db.Escola.sync();
-    await db.User.sync();
-
-    // EXECUTAR O RESET FORÇADO
-    await resetarSuperAdmin();
+    await ajustarEstruturaBanco();
 
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando na porta ${PORT}`);
-      console.log(`✅ Pode tentar o login agora em https://gestaoemdanca.com.br`);
+      console.log("🔗 API pronta para receber requisições.");
     });
   } catch (err) {
-    console.error("⚠️ Falha crítica:", err.message);
-    app.listen(PORT);
+    console.error("⚠️ Falha ao iniciar:", err.message);
+    // Tenta manter o servidor vivo mesmo com erros de DB
+    app.listen(PORT, () => console.log("🚀 Servidor em modo de recuperação."));
   }
 }
 
