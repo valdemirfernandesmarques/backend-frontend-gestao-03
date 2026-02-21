@@ -11,7 +11,8 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 
 const db = {};
 
-// Importação forçada AJUSTADA para a pasta models
+// AJUSTE: Adicionado "./models/" antes de cada nome de arquivo
+// Isso indica ao Node para procurar dentro da pasta models
 db.Escola = require("./models/Escola")(sequelize, DataTypes);
 db.Aluno = require("./models/Aluno")(sequelize, DataTypes);
 db.Professor = require("./models/Professor")(sequelize, DataTypes);
