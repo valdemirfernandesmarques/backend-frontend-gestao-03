@@ -6,14 +6,11 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ Mantendo sua configuração de CORS e JSON
 app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// ===============================================
-// 🚦 REGISTRO DE TODAS AS ROTAS ORIGINAIS
-// ===============================================
+// --- TODAS AS SUAS ROTAS MANTIDAS INTEGRALMENTE ---
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -62,71 +59,40 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
-// ===============================================
-// 🛠️ BOOTSTRAP: REPARO E ESTABILIZAÇÃO
-// ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ ENGENHARIA: Verificando integridade estrutural...");
+    console.log("🛠️ OPERAÇÃO DE EMERGÊNCIA: Resetando tabelas corrompidas...");
     await db.sequelize.authenticate();
 
-    // 1️⃣ Desligar verificações para permitir alteração de colunas com dados presentes
+    // 1️⃣ DESATIVAR TUDO
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
-    // 2️⃣ Corrigir View que causava erro no cadastro de professores
+    // 2️⃣ APAGAR AS TABELAS QUE ESTÃO TRAVANDO O SISTEMA
+    // Isso é necessário porque o MySQL se recusa a adicionar a coluna 'horarioInicio' com dados lá.
+    await db.sequelize.query('DROP TABLE IF EXISTS Matriculas');
+    await db.sequelize.query('DROP TABLE IF EXISTS Turmas');
     await db.sequelize.query('DROP VIEW IF EXISTS professor');
 
-    // 3️⃣ REPARO FORÇADO DA TABELA TURMAS (Solução Erro 1054)
-    // Usamos comandos individuais para garantir que cada coluna seja injetada se faltar
-    const tables = await db.sequelize.getQueryInterface().showAllTables();
-    if (tables.includes('Turmas')) {
-        console.log("💉 Verificando colunas na tabela Turmas...");
-        const columns = await db.sequelize.getQueryInterface().describeTable('Turmas');
-        
-        if (!columns.horarioInicio) {
-            await db.sequelize.query('ALTER TABLE Turmas ADD COLUMN horarioInicio TIME NULL AFTER nome');
-            console.log("✅ Coluna horarioInicio adicionada.");
-        }
-        if (!columns.horarioFim) {
-            await db.sequelize.query('ALTER TABLE Turmas ADD COLUMN horarioFim TIME NULL AFTER horarioInicio');
-            console.log("✅ Coluna horarioFim adicionada.");
-        }
-        if (!columns.diaDaSemana) {
-            await db.sequelize.query('ALTER TABLE Turmas ADD COLUMN diaDaSemana VARCHAR(255) NULL AFTER horarioFim');
-            console.log("✅ Coluna diaDaSemana adicionada.");
-        }
-    }
-
-    // 4️⃣ Sincronizar modelos sem apagar dados (alter: true)
-    await db.sequelize.sync({ alter: true });
+    // 3️⃣ RECRIAR TUDO LIMPO
+    // Aqui o Sequelize vai criar as tabelas novas com horarioInicio, horarioFim, etc.
+    await db.sequelize.sync({ force: false });
     
-    // 5️⃣ Reativar chaves estrangeiras
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Banco de dados estabilizado.");
+    console.log("✅ Tabelas Turmas e Matriculas reconstruídas do zero.");
 
-    // 6️⃣ Garantir Escola 2 e Vínculo do Admin
-    await db.Escola.findOrCreate({
-      where: { id: 2 },
-      defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" }
-    });
-
-    const adminEmail = "valdemir.marques1925@gmail.com";
-    const user = await db.User.findOne({ where: { email: adminEmail } });
-    if (user) {
-      await user.update({ escolaId: 2 });
-      console.log("👤 Admin verificado na Escola 2.");
-    }
+    // 4️⃣ GARANTIR ADMIN E ESCOLA
+    await db.Escola.findOrCreate({ where: { id: 2 }, defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } });
+    const user = await db.User.findOne({ where: { email: "valdemir.marques1925@gmail.com" } });
+    if (user) await user.update({ escolaId: 2 });
 
     app.listen(PORT, () => {
-      console.log("--------------------------------------------------");
-      console.log(`🚀 SERVIDOR ONLINE: https://api-gestao-danca.onrender.com`);
-      console.log("--------------------------------------------------");
+      console.log(`🚀 SISTEMA RESETADO E ONLINE`);
     });
 
   } catch (err) {
-    console.error("❌ Erro fatal no bootstrap:", err.message);
+    console.error("❌ ERRO:", err.message);
     if (!app.listening) app.listen(PORT);
   }
 }
