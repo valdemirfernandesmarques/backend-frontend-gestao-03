@@ -6,26 +6,29 @@ require("dotenv").config();
 
 const app = express();
 
+// Configurações e Middlewares
 app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// CORREÇÃO DO CAMINHO DO FRONTEND
-const distPath = path.join(__dirname, "dist");
+// --- SERVIR FRONTEND (CRUCIAL PARA O RENDER) ---
+// Isso evita o erro "no such file or directory, stat '.../dist/index.html'"
+const distPath = path.resolve(__dirname, "dist");
 app.use(express.static(distPath));
 
-// --- ROTAS DA API ---
+// --- IMPORTAÇÃO DE TODAS AS ROTAS ---
 const authRoutes = require("./routes/authRoutes");
-const userRoutes = require("./routes/userRoutes");
+const ativacaoRoutes = require("./routes/ativacaoRoutes");
 const escolaRoutes = require("./routes/escolaRoutes");
 const modalidadeRoutes = require("./routes/modalidadeRoutes");
 const alunoRoutes = require("./routes/alunoRoutes");
 const professorRoutes = require("./routes/professorRoutes");
 const turmaRoutes = require("./routes/turmaRoutes");
 const matriculaRoutes = require("./routes/matriculaRoutes");
-// (Mantenha as outras rotas que você já tem aqui...)
 
+// --- REGISTRO DAS ROTAS NA API ---
 app.use("/api/auth", authRoutes);
+app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/escolas", escolaRoutes);
 app.use("/api/modalidades", modalidadeRoutes);
 app.use("/api/alunos", alunoRoutes);
@@ -33,45 +36,37 @@ app.use("/api/professores", professorRoutes);
 app.use("/api/turmas", turmaRoutes);
 app.use("/api/matriculas", matriculaRoutes);
 
-// ROTA CORRIGIDA PARA SERVIR O INDEX.HTML
+// --- ROTA SPA (FALLBACK PARA INDEX.HTML) ---
+// Garante que o usuário consiga navegar pelas rotas do site sem erro 404
 app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-        const indexPath = path.join(distPath, "index.html");
-        res.sendFile(indexPath);
+        res.sendFile(path.join(distPath, "index.html"));
     }
 });
 
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
-  try {
-    console.log("🛠️ OPERAÇÃO DE CHOQUE: Resetando estrutura...");
-    await db.sequelize.authenticate();
-
-    // 1️⃣ Mata as travas de segurança
-    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
-
-    // 2️⃣ FORÇA A ATUALIZAÇÃO (Isso vai recriar as tabelas com as colunas novas)
-    // Usamos force: true uma vez para garantir que 'horarioInicio' seja criado
-    await db.sequelize.sync({ force: false, alter: true });
-    
-    // 3️⃣ Se mesmo com alter:true não foi, vamos dar o comando manual bruto:
     try {
-        await db.sequelize.query("ALTER TABLE Turmas ADD COLUMN IF NOT EXISTS horarioInicio TIME;");
-        await db.sequelize.query("ALTER TABLE Turmas ADD COLUMN IF NOT EXISTS horarioFim TIME;");
-    } catch (e) { console.log("Colunas já existem ou erro no ALTER manual"); }
+        console.log("📡 Conectando ao MySQL da Aiven...");
+        await db.sequelize.authenticate();
+        console.log("✅ Conexão estabelecida.");
 
-    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');
-    console.log("✅ BANCO SINCRONIZADO.");
+        // Sincroniza o banco sem apagar nada (agora com as colunas já criadas!)
+        await db.sequelize.sync({ alter: true });
+        
+        // Garante escola ID 2 para o sistema rodar
+        await db.Escola.findOrCreate({ 
+            where: { id: 2 }, 
+            defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
+        });
 
-    app.listen(PORT, () => {
-      console.log(`🚀 SERVIDOR RODANDO NA PORTA ${PORT}`);
-    });
-
-  } catch (err) {
-    console.error("❌ Erro fatal:", err.message);
-    if (!app.listening) app.listen(PORT);
-  }
+        app.listen(PORT, () => {
+            console.log(`🚀 SERVIDOR OPERACIONAL NA PORTA ${PORT}`);
+        });
+    } catch (err) {
+        console.error("❌ Erro fatal ao iniciar o servidor:", err.message);
+    }
 }
 
 bootstrap();
