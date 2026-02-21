@@ -10,7 +10,7 @@ app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// --- Importação de Rotas (Mantendo todas as rotas informadas) ---
+// --- Importação de Rotas (Mantendo todas as rotas originais) ---
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -64,40 +64,52 @@ const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ ENGENHARIA: Iniciando RECORTE E LIMPEZA de tabelas...");
+    console.log("🛠️ ENGENHARIA: Aplicando correção de integridade...");
     await db.sequelize.authenticate();
 
-    // 1️⃣ Forçar desligamento de chaves
+    // 1️⃣ DESATIVAR TRAVAS (Crítico para resolver o erro ER_NO_REFERENCED_ROW_2)
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
-    // 2️⃣ LIMPEZA RADICAL: O erro Unknown Column só morre se a tabela for limpa
-    // Removemos a VIEW problemática e a tabela Turmas que está corrompida
+    // 2️⃣ LIMPAR VIEW E TABELAS COM ERRO DE COLUNA
     await db.sequelize.query('DROP VIEW IF EXISTS professor');
-    await db.sequelize.query('DROP TABLE IF EXISTS Turmas'); 
-    await db.sequelize.query('DROP TABLE IF EXISTS Matriculas');
-
-    // 3️⃣ SINCRONIZAÇÃO FORÇADA: Recria Turmas com horarioInicio, horarioFim, etc.
-    await db.sequelize.sync({ force: false, alter: true });
+    // Forçamos a recriação apenas se necessário, mas com 'alter' para não perder tudo
+    await db.sequelize.sync({ alter: true });
     
+    // 3️⃣ REATIVAR TRAVAS
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Tabelas Recriadas com as colunas corretas.");
+    console.log("✅ Banco de dados sincronizado e travas reajustadas.");
 
-    // 4️⃣ Garantir dados básicos
-    await db.Escola.findOrCreate({ where: { id: 2 }, defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } });
+    // 4️⃣ GARANTIR ESCOLA 2
+    const [escola] = await db.Escola.findOrCreate({ 
+        where: { id: 2 }, 
+        defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
+    });
 
+    // 5️⃣ GARANTIR USUÁRIO ADMIN (Sempre ID fixo se possível para evitar erro em Vendas)
     const adminEmail = "valdemir.marques1925@gmail.com";
-    const user = await db.User.findOne({ where: { email: adminEmail } });
-    if (user) {
-      await user.update({ escolaId: 2 });
-      console.log("👤 Admin OK.");
+    let admin = await db.User.findOne({ where: { email: adminEmail } });
+    
+    if (!admin) {
+        const hash = await bcrypt.hash("Gestao@danca202558", 10);
+        admin = await db.User.create({
+            nome: "Valdemir Admin",
+            email: adminEmail,
+            password: hash,
+            perfil: "SUPER_ADMIN",
+            escolaId: 2
+        });
+        console.log("👤 Novo Admin criado.");
+    } else {
+        await admin.update({ escolaId: 2 });
+        console.log("👤 Admin existente atualizado.");
     }
 
     app.listen(PORT, () => {
-      console.log(`🚀 SISTEMA ONLINE E REPARADO EM: ${PORT}`);
+      console.log(`🚀 SERVIDOR OPERALIZADO: https://api-gestao-danca.onrender.com`);
     });
 
   } catch (err) {
-    console.error("❌ Erro fatal:", err.message);
+    console.error("❌ Erro fatal no bootstrap:", err.message);
     if (!app.listening) app.listen(PORT);
   }
 }
