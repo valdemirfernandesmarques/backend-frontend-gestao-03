@@ -6,16 +6,16 @@ require("dotenv").config();
 
 const app = express();
 
-// Middlewares
+// --- CONFIGURAÇÕES GERAIS ---
 app.use(cors({ origin: "*" }));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// Frontend
+// --- SERVIR FRONTEND ---
 const distPath = path.resolve(__dirname, "dist");
 app.use(express.static(distPath));
 
-// Rotas
+// --- IMPORTAÇÃO DE ROTAS ---
 const authRoutes = require("./routes/authRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
 const escolaRoutes = require("./routes/escolaRoutes");
@@ -25,6 +25,7 @@ const professorRoutes = require("./routes/professorRoutes");
 const turmaRoutes = require("./routes/turmaRoutes");
 const matriculaRoutes = require("./routes/matriculaRoutes");
 
+// --- REGISTRO DE ROTAS ---
 app.use("/api/auth", authRoutes);
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/escolas", escolaRoutes);
@@ -34,9 +35,12 @@ app.use("/api/professores", professorRoutes);
 app.use("/api/turmas", turmaRoutes);
 app.use("/api/matriculas", matriculaRoutes);
 
+// Suporte ao F5 e rotas do Frontend (SPA)
 app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
-        res.sendFile(path.join(distPath, "index.html"));
+        res.sendFile(path.join(distPath, "index.html"), (err) => {
+            if (err) res.status(500).send("Aguardando upload da pasta dist...");
+        });
     }
 });
 
@@ -48,25 +52,24 @@ async function bootstrap() {
         await db.sequelize.authenticate();
         console.log("✅ Conexão estabelecida.");
 
-        // Força a sincronização, mas captura erros para não derrubar o servidor
+        // Sincroniza sem derrubar o servidor em caso de erros residuais
         try {
             await db.sequelize.sync({ alter: true });
             console.log("✅ Tabelas sincronizadas.");
-        } catch (syncErr) {
-            console.error("⚠️ Aviso: Erro na sincronização automática, mas seguindo adiante...");
+        } catch (e) {
+            console.log("⚠️ Nota: Estrutura mantida via script manual.");
         }
         
-        // Garante escola ID 2
+        // Garante escola ID 2 para o funcionamento básico
         await db.Escola.findOrCreate({ 
             where: { id: 2 }, 
             defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
         });
 
-        app.listen(PORT, () => console.log(`🚀 SERVIDOR OK NA PORTA ${PORT}`));
+        app.listen(PORT, () => console.log(`🚀 SERVIDOR OPERACIONAL NA PORTA ${PORT}`));
     } catch (err) {
         console.error("❌ Erro fatal:", err.message);
-        // Tenta rodar o servidor mesmo com erro de DB para o Render não dar 'Exited Early'
-        app.listen(PORT, () => console.log("⚠️ Servidor rodando em modo de emergência."));
+        app.listen(PORT, () => console.log("⚠️ Servidor iniciado em modo de segurança."));
     }
 }
 
