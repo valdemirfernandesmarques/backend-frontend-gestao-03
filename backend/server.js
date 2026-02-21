@@ -6,11 +6,19 @@ require("dotenv").config();
 
 const app = express();
 
-app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
+// ✅ Configuração de CORS para evitar bloqueios no Frontend
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// --- Importação de Rotas (Mantendo todas as rotas originais) ---
+// ===============================================
+// 🛣️ IMPORTAÇÃO DE TODAS AS ROTAS (Mantendo integridade)
+// ===============================================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -35,7 +43,9 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
-// --- Registro das Rotas ---
+// ===============================================
+// 🚦 REGISTRO DAS ROTAS
+// ===============================================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
@@ -60,52 +70,60 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
+// ===============================================
+// 🛠️ BOOTSTRAP: REPARO DEFINITIVO DA TABELA TURMAS
+// ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ ENGENHARIA: Aplicando correção de integridade...");
+    console.log("🛠️ ENGENHARIA: Iniciando reparo de emergência...");
     await db.sequelize.authenticate();
 
-    // 1️⃣ DESATIVAR TRAVAS (Crítico para resolver o erro ER_NO_REFERENCED_ROW_2)
+    // 1️⃣ Forçar desligamento de travas para alteração estrutural
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
-    // 2️⃣ LIMPAR VIEW E TABELAS COM ERRO DE COLUNA
+    // 2️⃣ Corrigir View que bloqueia o cadastro de professores
     await db.sequelize.query('DROP VIEW IF EXISTS professor');
-    // Forçamos a recriação apenas se necessário, mas com 'alter' para não perder tudo
+
+    // 3️⃣ INJEÇÃO MANUAL VIA SQL (Solução para o erro 1054)
+    // Se o Sequelize não consegue criar, nós forçamos via comando direto no MySQL
+    console.log("💉 Injetando colunas de horário na tabela Turmas...");
+    try {
+      await db.sequelize.query(`
+        ALTER TABLE Turmas 
+        ADD COLUMN IF NOT EXISTS horarioInicio TIME NULL,
+        ADD COLUMN IF NOT EXISTS horarioFim TIME NULL,
+        ADD COLUMN IF NOT EXISTS diaDaSemana VARCHAR(255) NULL;
+      `);
+      console.log("✅ Colunas injetadas com sucesso!");
+    } catch (sqlError) {
+      console.log("ℹ️ Nota: Colunas já existem ou precisam de reconstrução via sync.");
+    }
+
+    // 4️⃣ Sincronização geral com alter (para não apagar dados existentes)
     await db.sequelize.sync({ alter: true });
     
-    // 3️⃣ REATIVAR TRAVAS
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Banco de dados sincronizado e travas reajustadas.");
+    console.log("✅ Banco de dados estabilizado.");
 
-    // 4️⃣ GARANTIR ESCOLA 2
-    const [escola] = await db.Escola.findOrCreate({ 
-        where: { id: 2 }, 
-        defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } 
+    // 5️⃣ Garantir Escola 2 e Usuário Admin
+    await db.Escola.findOrCreate({
+      where: { id: 2 },
+      defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" }
     });
 
-    // 5️⃣ GARANTIR USUÁRIO ADMIN (Sempre ID fixo se possível para evitar erro em Vendas)
     const adminEmail = "valdemir.marques1925@gmail.com";
-    let admin = await db.User.findOne({ where: { email: adminEmail } });
-    
-    if (!admin) {
-        const hash = await bcrypt.hash("Gestao@danca202558", 10);
-        admin = await db.User.create({
-            nome: "Valdemir Admin",
-            email: adminEmail,
-            password: hash,
-            perfil: "SUPER_ADMIN",
-            escolaId: 2
-        });
-        console.log("👤 Novo Admin criado.");
-    } else {
-        await admin.update({ escolaId: 2 });
-        console.log("👤 Admin existente atualizado.");
+    const user = await db.User.findOne({ where: { email: adminEmail } });
+    if (user) {
+      await user.update({ escolaId: 2 });
+      console.log("👤 Admin vinculado à Escola 2.");
     }
 
     app.listen(PORT, () => {
-      console.log(`🚀 SERVIDOR OPERALIZADO: https://api-gestao-danca.onrender.com`);
+      console.log("--------------------------------------------------");
+      console.log(`🚀 SERVIDOR ONLINE: https://api-gestao-danca.onrender.com`);
+      console.log("--------------------------------------------------");
     });
 
   } catch (err) {
