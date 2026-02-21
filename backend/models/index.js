@@ -21,7 +21,7 @@ const sequelize = new Sequelize(
 
 const db = {};
 
-// 1. CARREGAR TODOS OS MODELOS PRIMEIRO (ORDEM CRÍTICA)
+// 1. IMPORTAÇÃO DOS MODELOS (Ordem protegida)
 db.Escola = require("./Escola")(sequelize, DataTypes);
 db.Aluno = require("./Aluno")(sequelize, DataTypes);
 db.Professor = require("./Professor")(sequelize, DataTypes);
@@ -32,9 +32,9 @@ db.Matricula = require("./Matricula")(sequelize, DataTypes);
 db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
 db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
 
-// 2. EXECUTAR ASSOCIAÇÕES SOMENTE APÓS TODOS ESTAREM CARREGADOS
+// 2. ASSOCIAÇÕES (Só executa se o modelo existir)
 Object.keys(db).forEach((modelName) => {
-  if (db[modelName] && typeof db[modelName].associate === 'function') {
+  if (db[modelName] && typeof db[modelName].associate === "function") {
     db[modelName].associate(db);
   }
 });
