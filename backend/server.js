@@ -6,14 +6,11 @@ require("dotenv").config();
 
 const app = express();
 
-// ===============================
-// ✅ CONFIGURAÇÃO DE CORS (Blindado)
-// ===============================
+// ✅ CORS TOTALMENTE LIBERADO PARA ACABAR COM OS BLOQUEIOS
 app.use(cors({
-  origin: ["https://gestaoemdanca.com.br", "https://www.gestaoemdanca.com.br"],
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 app.use(express.json());
@@ -74,52 +71,42 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================================
-// 🛠️ INICIALIZAÇÃO DO SERVIDOR (BOOTSTRAP)
+// 🛠️ INICIALIZAÇÃO SEGURA (BOOTSTRAP)
 // ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    // 1. Autentica a conexão com a Aiven
     await db.sequelize.authenticate();
-    console.log("📡 Conexão com MySQL (Aiven) estabelecida com sucesso.");
+    console.log("📡 Banco de dados Conectado com sucesso.");
 
-    // 2. Sincroniza a estrutura das tabelas. 
-    // O 'alter: true' adiciona colunas novas sem apagar os dados existentes.
+    // Sincroniza sem apagar nada (force: false)
+    // O 'alter: true' garante que colunas como 'horarioInicio' sejam criadas se sumirem
     await db.sequelize.sync({ force: false, alter: true });
-    console.log("✅ Estrutura do banco de dados sincronizada e atualizada.");
+    console.log("✅ Estrutura de tabelas sincronizada.");
 
-    // 3. Garante a existência do Super Admin para acesso inicial
+    // Garante o Super Admin no banco limpo
     const adminEmail = "valdemir.marques1925@gmail.com";
-    const [user, created] = await db.User.findOrCreate({
-      where: { email: adminEmail },
-      defaults: {
+    const adminExists = await db.User.findOne({ where: { email: adminEmail } });
+    
+    if (!adminExists) {
+      const hash = await bcrypt.hash("Gestao@danca202558", 10);
+      await db.User.create({
         nome: "Super Admin",
         email: adminEmail,
-        password: await bcrypt.hash("Gestao@danca202558", 10),
+        password: hash,
         perfil: "SUPER_ADMIN",
         escolaId: null
-      }
-    });
-
-    if (created) {
-      console.log("👤 Super Admin criado pela primeira vez.");
-    } else {
-      console.log("👤 Super Admin já existe no sistema.");
+      });
+      console.log("👤 Super Admin restaurado.");
     }
 
-    // 4. Inicia a escuta das requisições
     app.listen(PORT, () => {
-      console.log("--------------------------------------------------");
-      console.log(`🚀 SERVIDOR ONLINE NA PORTA ${PORT}`);
-      console.log(`🔗 API: https://api-gestao-danca.onrender.com`);
-      console.log("--------------------------------------------------");
+      console.log(`🚀 Servidor rodando na porta ${PORT}`);
     });
 
   } catch (err) {
-    console.error("❌ ERRO CRÍTICO NA INICIALIZAÇÃO:");
-    console.error(err.message);
-    // Tenta manter o processo vivo em caso de erro de conexão temporário
+    console.error("❌ Erro no bootstrap:", err.message);
     app.listen(PORT);
   }
 }
