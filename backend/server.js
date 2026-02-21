@@ -10,10 +10,10 @@ app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// Servir os arquivos estáticos da pasta dist (Frontend)
+// Servir frontend
 app.use(express.static(path.join(__dirname, "dist")));
 
-// --- ROTAS ORIGINAIS (Preservadas) ---
+// --- TODAS AS SUAS ROTAS (MANTIDAS 100%) ---
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -62,7 +62,6 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
-// Rota para o Frontend (Single Page Application)
 app.get("*", (req, res) => {
     if (!req.path.startsWith("/api")) {
         res.sendFile(path.join(__dirname, "dist", "index.html"));
@@ -73,35 +72,41 @@ const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ ENGENHARIA: Executando reconstrução de tabelas travadas...");
+    console.log("🛠️ AGENTE DE REPARO: Executando comandos diretos no banco...");
     await db.sequelize.authenticate();
 
-    // 1️⃣ Forçar desligamento de chaves estrangeiras
-    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+    // 1️⃣ Desativa chaves estrangeiras para permitir a alteração
+    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0;');
 
-    // 2️⃣ APAGAR AS TABELAS QUE ESTÃO GERANDO O ERRO 500
-    // Como o MySQL não aceita o ALTER, o DROP é a única saída para recriar com os campos novos.
-    await db.sequelize.query('DROP TABLE IF EXISTS Matriculas');
-    await db.sequelize.query('DROP TABLE IF EXISTS Turmas');
-    await db.sequelize.query('DROP VIEW IF EXISTS professor');
+    // 2️⃣ Comando SQL Direto para criar as colunas faltantes na tabela Turmas
+    // Usamos comandos individuais para garantir que o erro 1054 suma
+    try {
+      await db.sequelize.query("ALTER TABLE Turmas ADD COLUMN IF NOT EXISTS horarioInicio TIME NULL;");
+      await db.sequelize.query("ALTER TABLE Turmas ADD COLUMN IF NOT EXISTS horarioFim TIME NULL;");
+      await db.sequelize.query("ALTER TABLE Turmas ADD COLUMN IF NOT EXISTS diaDaSemana VARCHAR(255) NULL;");
+      console.log("✅ Colunas injetadas com sucesso via SQL Direto.");
+    } catch (sqlError) {
+      console.log("ℹ️ Nota: Colunas podem já existir ou o banco impediu o ADD manual, tentando sync forçado...");
+    }
 
-    // 3️⃣ RECRIAR ESTRUTURA LIMPA (Baseada nos seus arquivos models/*.js)
+    // 3️⃣ Sincronização Final
     await db.sequelize.sync({ alter: true });
     
-    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Tabelas Turmas e Matriculas recriadas com sucesso.");
+    // 4️⃣ Reativa as chaves
+    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1;');
+    console.log("✅ Estrutura do banco de dados sincronizada.");
 
-    // 4️⃣ Garantir Escola e Admin
+    // Garantir Escola e Admin
     await db.Escola.findOrCreate({ where: { id: 2 }, defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } });
     const user = await db.User.findOne({ where: { email: "valdemir.marques1925@gmail.com" } });
     if (user) await user.update({ escolaId: 2 });
 
     app.listen(PORT, () => {
-      console.log(`🚀 SERVIDOR ESTÁVEL E ONLINE`);
+      console.log(`🚀 SERVIDOR OPERAÇÕES OK`);
     });
 
   } catch (err) {
-    console.error("❌ Erro no bootstrap:", err.message);
+    console.error("❌ Erro fatal no bootstrap:", err.message);
     if (!app.listening) app.listen(PORT);
   }
 }
