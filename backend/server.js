@@ -1,47 +1,36 @@
-const express = require("express");
-const cors = require("cors");
-const db = require("./models");
-const path = require("path");
+const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
-const app = express();
-app.use(cors({ origin: "*" }));
-app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
-const distPath = path.resolve(__dirname, "dist");
-app.use(express.static(distPath));
-
-// Rotas
-app.use("/api/auth", require("./routes/authRoutes"));
-app.use("/api/escolas", require("./routes/escolaRoutes"));
-app.use("/api/alunos", require("./routes/alunoRoutes"));
-app.use("/api/professores", require("./routes/professorRoutes"));
-app.use("/api/turmas", require("./routes/turmaRoutes"));
-app.use("/api/matriculas", require("./routes/matriculaRoutes"));
-app.use("/api/funcionarios", require("./routes/funcionarioRoutes"));
-
-app.get("*", (req, res) => {
-    if (!req.path.startsWith("/api")) {
-        res.sendFile(path.join(distPath, "index.html"));
-    }
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASS, {
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT || 13908,
+  dialect: "mysql",
+  logging: false,
+  dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
 });
 
-const PORT = process.env.PORT || 10000;
+const db = {};
 
-async function bootstrap() {
-    try {
-        await db.sequelize.authenticate();
-        console.log("📡 Conexão MySQL OK!");
-        
-        // sync({ alter: false }) para preservar o script de correção
-        await db.sequelize.sync({ alter: false });
-        console.log("✅ Modelos e Associações carregados com sucesso.");
+// CARREGAMENTO MANUAL E ORDENADO - NÃO USE REQUIRE DINÂMICO AQUI
+db.Escola = require("./Escola")(sequelize, DataTypes);
+db.Aluno = require("./Aluno")(sequelize, DataTypes);
+db.Professor = require("./Professor")(sequelize, DataTypes);
+db.Funcionario = require("./Funcionario")(sequelize, DataTypes);
+db.Modalidade = require("./Modalidade")(sequelize, DataTypes);
+db.Turma = require("./Turma")(sequelize, DataTypes);
+db.Matricula = require("./Matricula")(sequelize, DataTypes);
+db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
+db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
 
-        app.listen(PORT, () => console.log(`🚀 SERVIDOR RODANDO NA PORTA ${PORT}`));
-    } catch (err) {
-        console.error("❌ Erro:", err.message);
-        app.listen(PORT, () => console.log("⚠️ Modo de segurança."));
-    }
-}
-bootstrap();
+// SÓ DEPOIS DE TODOS CARREGADOS, FAZEMOS AS ASSOCIAÇÕES
+Object.keys(db).forEach((modelName) => {
+  if (db[modelName].associate) {
+    console.log(`Associando: ${modelName}`);
+    db[modelName].associate(db);
+  }
+});
+
+db.sequelize = sequelize;
+db.Sequelize = Sequelize;
+
+module.exports = db;
