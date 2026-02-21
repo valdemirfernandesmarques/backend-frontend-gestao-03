@@ -1,8 +1,4 @@
-// backend/models/index.js
-
-const fs = require("fs");
-const path = require("path");
-const Sequelize = require("sequelize");
+const { Sequelize, DataTypes } = require("sequelize");
 require("dotenv").config();
 
 const sequelize = new Sequelize(
@@ -14,32 +10,32 @@ const sequelize = new Sequelize(
     port: process.env.DB_PORT || 13908,
     dialect: "mysql",
     logging: false,
-    dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: false
+      }
+    }
   }
 );
 
 const db = {};
 
-// Lê automaticamente todos os arquivos .js dentro da pasta models
-fs.readdirSync(__dirname)
-  .filter((file) => {
-    return (
-      file.indexOf(".") !== 0 &&
-      file !== "index.js" &&
-      file.slice(-3) === ".js"
-    );
-  })
-  .forEach((file) => {
-    const model = require(path.join(__dirname, file))(
-      sequelize,
-      Sequelize.DataTypes
-    );
-    db[model.name] = model;
-  });
+db.Escola = require("./models/Escola")(sequelize, DataTypes);
+db.Aluno = require("./models/Aluno")(sequelize, DataTypes);
+db.Professor = require("./models/Professor")(sequelize, DataTypes);
+db.Funcionario = require("./models/Funcionario")(sequelize, DataTypes);
+db.Modalidade = require("./models/Modalidade")(sequelize, DataTypes);
+db.Turma = require("./models/Turma")(sequelize, DataTypes);
+db.Matricula = require("./models/Matricula")(sequelize, DataTypes);
+db.Mensalidade = require("./models/Mensalidade")(sequelize, DataTypes);
+db.ProfessorModalidade = require("./models/ProfessorModalidade")(sequelize, DataTypes);
+db.User = require("./models/User")(sequelize, DataTypes);
+db.TransacaoFinanceira = require("./models/TransacaoFinanceira")(sequelize, DataTypes);
+db.Venda = require("./models/Venda")(sequelize, DataTypes);
+db.VendaItem = require("./models/VendaItem")(sequelize, DataTypes);
 
-// Executa associações
 Object.keys(db).forEach((modelName) => {
-  if (db[modelName].associate) {
+  if (db[modelName] && db[modelName].associate) {
     db[modelName].associate(db);
   }
 });
