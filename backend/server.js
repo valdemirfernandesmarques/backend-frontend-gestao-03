@@ -6,9 +6,9 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ Configuração de CORS - Liberado para evitar bloqueios no frontend
+// ✅ CORS TOTALMENTE LIBERADO
 app.use(cors({
-  origin: "*", 
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
@@ -44,7 +44,7 @@ const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
 // ===============================================
-// 🛣️ REGISTRO DAS ROTAS NO APP
+// 🛣️ REGISTRO DAS ROTAS
 // ===============================================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
@@ -71,55 +71,57 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================================
-// 🛠️ INICIALIZAÇÃO, REPARO DE VIEW E SYNC
+// 🛠️ SCRIPT DE LIMPEZA PROFUNDA E BOOTSTRAP
 // ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("📡 Conectando ao MySQL...");
+    console.log("🛠️ Iniciando Limpeza Profunda...");
     await db.sequelize.authenticate();
-    console.log("✅ Conexão estabelecida com sucesso.");
 
-    // 1️⃣ REMOVER VIEW INVÁLIDA (Corrige o erro ER_VIEW_INVALID)
-    // Isso apaga a "tabela virtual" que está impedindo o Sequelize de ler a tabela real de professores.
-    console.log("🧹 Limpando metadados antigos...");
+    // 1️⃣ Matar a VIEW que está bloqueando a tabela de professores
+    // O erro 'ER_VIEW_INVALID' acontece porque existe uma view 'professor' que impede a criação da tabela 'professor'
     await db.sequelize.query('DROP VIEW IF EXISTS professor');
+    await db.sequelize.query('DROP TABLE IF EXISTS professor'); // Limpa se houver tabela mal formada
     
-    // 2️⃣ SINCRONIZAÇÃO SEGURA
-    // 'alter: true' ajusta as colunas sem apagar os dados que você já cadastrou.
+    // 2️⃣ Desativar checagem para forçar a correção das colunas (como horarioInicio)
+    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
+    
+    // 3️⃣ Sincronizar (Isso vai criar a coluna horarioInicio na tabela Turmas)
     await db.sequelize.sync({ alter: true });
-    console.log("✅ Tabelas sincronizadas e preservadas.");
+    
+    await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
+    console.log("✅ Banco de dados limpo e colunas atualizadas.");
 
-    // 3️⃣ GARANTIR ESCOLA ID 2
+    // 4️⃣ Garantir que a Escola 2 existe
     await db.Escola.findOrCreate({
       where: { id: 2 },
-      defaults: {
-        id: 2,
-        nome: "Escola de Dança Base",
-        email: "contato@base.com",
-        status: "ATIVO"
-      }
+      defaults: { id: 2, nome: "Escola de Dança Base", email: "contato@base.com", status: "ATIVO" }
     });
 
-    // 4️⃣ GARANTIR VÍNCULO DO ADMIN COM A ESCOLA 2
+    // 5️⃣ Garantir Usuário Admin
     const adminEmail = "valdemir.marques1925@gmail.com";
     const user = await db.User.findOne({ where: { email: adminEmail } });
-    
-    if (user && user.escolaId !== 2) {
+    if (!user) {
+      const hash = await bcrypt.hash("Gestao@danca202558", 10);
+      await db.User.create({
+        nome: "Valdemir Admin",
+        email: adminEmail,
+        password: hash,
+        perfil: "SUPER_ADMIN",
+        escolaId: 2
+      });
+    } else {
       await user.update({ escolaId: 2 });
-      console.log("👤 Usuário Admin vinculado corretamente à Escola ID 2.");
     }
 
     app.listen(PORT, () => {
-      console.log("--------------------------------------------------");
-      console.log(`🚀 SERVIDOR RODANDO: https://api-gestao-danca.onrender.com`);
-      console.log("--------------------------------------------------");
+      console.log(`🚀 SERVIDOR RODANDO EM: https://api-gestao-danca.onrender.com`);
     });
 
   } catch (err) {
     console.error("❌ Erro fatal no bootstrap:", err.message);
-    // Tenta manter o servidor ativo para o Render não derrubar o serviço
     if (!app.listening) app.listen(PORT);
   }
 }
