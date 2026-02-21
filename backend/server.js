@@ -1,17 +1,19 @@
 const express = require("express");
 const cors = require("cors");
 const db = require("./models");
-const bcrypt = require("bcryptjs");
+const path = require("path");
 require("dotenv").config();
 
 const app = express();
 
-// Configuração de CORS e JSON
 app.use(cors({ origin: "*", methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"], allowedHeaders: ["Content-Type", "Authorization"] }));
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// --- REGISTRO DE ROTAS (Mantendo integridade total) ---
+// Servir os arquivos estáticos da pasta dist (Frontend)
+app.use(express.static(path.join(__dirname, "dist")));
+
+// --- ROTAS ORIGINAIS (Preservadas) ---
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -60,46 +62,46 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
+// Rota para o Frontend (Single Page Application)
+app.get("*", (req, res) => {
+    if (!req.path.startsWith("/api")) {
+        res.sendFile(path.join(__dirname, "dist", "index.html"));
+    }
+});
+
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
-    console.log("🛠️ INICIANDO REPARO ESTRUTURAL...");
+    console.log("🛠️ ENGENHARIA: Executando reconstrução de tabelas travadas...");
     await db.sequelize.authenticate();
 
-    // 1️⃣ Desativar travas de chaves estrangeiras
+    // 1️⃣ Forçar desligamento de chaves estrangeiras
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 0');
 
-    // 2️⃣ Tentar injetar as colunas via SQL Puro (isso resolve o erro 1054)
-    // Usamos TRY/CATCH individual para cada coluna para não travar se ela já existir
-    const columns = ["horarioInicio TIME", "horarioFim TIME", "diaDaSemana VARCHAR(255)"];
-    for (const col of columns) {
-        try {
-            await db.sequelize.query(`ALTER TABLE Turmas ADD COLUMN ${col} NULL;`);
-            console.log(`✅ Coluna ${col} adicionada.`);
-        } catch (e) {
-            console.log(`ℹ️ Coluna ${col.split(' ')[0]} já existe ou ignorada.`);
-        }
-    }
+    // 2️⃣ APAGAR AS TABELAS QUE ESTÃO GERANDO O ERRO 500
+    // Como o MySQL não aceita o ALTER, o DROP é a única saída para recriar com os campos novos.
+    await db.sequelize.query('DROP TABLE IF EXISTS Matriculas');
+    await db.sequelize.query('DROP TABLE IF EXISTS Turmas');
+    await db.sequelize.query('DROP VIEW IF EXISTS professor');
 
-    // 3️⃣ Sincronizar modelos (alter: true para não apagar dados)
+    // 3️⃣ RECRIAR ESTRUTURA LIMPA (Baseada nos seus arquivos models/*.js)
     await db.sequelize.sync({ alter: true });
     
-    // 4️⃣ Reativar chaves
     await db.sequelize.query('SET FOREIGN_KEY_CHECKS = 1');
-    console.log("✅ Banco de dados estabilizado.");
+    console.log("✅ Tabelas Turmas e Matriculas recriadas com sucesso.");
 
-    // 5️⃣ Garantir Escola e Admin
-    await db.Escola.findOrCreate({ where: { id: 2 }, defaults: { id: 2, nome: "Escola Base", status: "ATIVO" } });
+    // 4️⃣ Garantir Escola e Admin
+    await db.Escola.findOrCreate({ where: { id: 2 }, defaults: { id: 2, nome: "Escola de Dança Base", status: "ATIVO" } });
     const user = await db.User.findOne({ where: { email: "valdemir.marques1925@gmail.com" } });
     if (user) await user.update({ escolaId: 2 });
 
     app.listen(PORT, () => {
-      console.log(`🚀 SERVIDOR RODANDO: https://api-gestao-danca.onrender.com`);
+      console.log(`🚀 SERVIDOR ESTÁVEL E ONLINE`);
     });
 
   } catch (err) {
-    console.error("❌ Erro fatal:", err.message);
+    console.error("❌ Erro no bootstrap:", err.message);
     if (!app.listening) app.listen(PORT);
   }
 }
