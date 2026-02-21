@@ -12,27 +12,27 @@ const sequelize = new Sequelize(
     logging: false,
     dialectOptions: {
       ssl: {
-        rejectUnauthorized: false
-      }
-    }
+        rejectUnauthorized: false,
+      },
+    },
   }
 );
 
 const db = {};
 
-db.Escola = require("./models/Escola")(sequelize, DataTypes);
-db.Aluno = require("./models/Aluno")(sequelize, DataTypes);
-db.Professor = require("./models/Professor")(sequelize, DataTypes);
-db.Funcionario = require("./models/Funcionario")(sequelize, DataTypes);
-db.Modalidade = require("./models/Modalidade")(sequelize, DataTypes);
-db.Turma = require("./models/Turma")(sequelize, DataTypes);
-db.Matricula = require("./models/Matricula")(sequelize, DataTypes);
-db.Mensalidade = require("./models/Mensalidade")(sequelize, DataTypes);
-db.ProfessorModalidade = require("./models/ProfessorModalidade")(sequelize, DataTypes);
-db.User = require("./models/User")(sequelize, DataTypes);
-db.TransacaoFinanceira = require("./models/TransacaoFinanceira")(sequelize, DataTypes);
-db.Venda = require("./models/Venda")(sequelize, DataTypes);
-db.VendaItem = require("./models/VendaItem")(sequelize, DataTypes);
+db.Escola = require("./Escola")(sequelize, DataTypes);
+db.Aluno = require("./Aluno")(sequelize, DataTypes);
+db.Professor = require("./Professor")(sequelize, DataTypes);
+db.Funcionario = require("./Funcionario")(sequelize, DataTypes);
+db.Modalidade = require("./Modalidade")(sequelize, DataTypes);
+db.Turma = require("./Turma")(sequelize, DataTypes);
+db.Matricula = require("./Matricula")(sequelize, DataTypes);
+db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
+db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
+db.User = require("./User")(sequelize, DataTypes);
+db.TransacaoFinanceira = require("./TransacaoFinanceira")(sequelize, DataTypes);
+db.Venda = require("./Venda")(sequelize, DataTypes);
+db.VendaItem = require("./VendaItem")(sequelize, DataTypes);
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName] && db[modelName].associate) {
