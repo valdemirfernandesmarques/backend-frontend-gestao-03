@@ -11,7 +11,8 @@ const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, proces
 
 const db = {};
 
-// Importação com nomes padronizados
+// Importação ajustada para garantir a letra inicial MAIÚSCULA
+// O Node no Linux exige que o nome aqui seja igual ao nome do arquivo no disco
 db.Escola = require("./Escola")(sequelize, DataTypes);
 db.Aluno = require("./Aluno")(sequelize, DataTypes);
 db.Professor = require("./Professor")(sequelize, DataTypes);
@@ -20,8 +21,9 @@ db.Modalidade = require("./Modalidade")(sequelize, DataTypes);
 db.Turma = require("./Turma")(sequelize, DataTypes);
 db.Matricula = require("./Matricula")(sequelize, DataTypes);
 db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
+db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
 
-// Forçar associações a olharem para as tabelas corretas
+// Associações com verificação
 Object.keys(db).forEach((modelName) => {
     if (db[modelName] && db[modelName].associate) {
         db[modelName].associate(db);
