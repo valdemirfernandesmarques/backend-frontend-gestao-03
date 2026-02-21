@@ -6,9 +6,9 @@ require("dotenv").config();
 
 const app = express();
 
-// ✅ CORS TOTALMENTE LIBERADO
+// ✅ Configuração de CORS - Liberado para evitar bloqueios no frontend
 app.use(cors({
-  origin: "*",
+  origin: "*", 
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
@@ -16,9 +16,9 @@ app.use(cors({
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));
 
-// ===============================
-// ===== IMPORTAÇÃO DAS ROTAS =====
-// ===============================
+// ===============================================
+// 🚀 IMPORTAÇÃO DE TODAS AS ROTAS
+// ===============================================
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
 const ativacaoRoutes = require("./routes/ativacaoRoutes");
@@ -43,9 +43,9 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
-// ===============================
-// ===== REGISTRO DAS ROTAS =====
-// ===============================
+// ===============================================
+// 🛣️ REGISTRO DAS ROTAS NO APP
+// ===============================================
 app.use("/api/ativacao", ativacaoRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/auth", recuperarSenhaRoutes);
@@ -71,20 +71,27 @@ app.use("/api/super", superAdminDashboardRoutes);
 app.use("/api/super/transacoes-financeiras", transacoesFinanceirasRoutes);
 
 // ===============================================
-// 🛠️ INICIALIZAÇÃO SEGURA (PRESERVANDO DADOS)
+// 🛠️ INICIALIZAÇÃO, REPARO DE VIEW E SYNC
 // ===============================================
 const PORT = process.env.PORT || 10000;
 
 async function bootstrap() {
   try {
+    console.log("📡 Conectando ao MySQL...");
     await db.sequelize.authenticate();
-    console.log("📡 Conectado ao MySQL.");
+    console.log("✅ Conexão estabelecida com sucesso.");
 
-    // ✅ IMPORTANTE: Mantemos 'alter: true' para NÃO APAGAR o que você acabou de cadastrar
+    // 1️⃣ REMOVER VIEW INVÁLIDA (Corrige o erro ER_VIEW_INVALID)
+    // Isso apaga a "tabela virtual" que está impedindo o Sequelize de ler a tabela real de professores.
+    console.log("🧹 Limpando metadados antigos...");
+    await db.sequelize.query('DROP VIEW IF EXISTS professor');
+    
+    // 2️⃣ SINCRONIZAÇÃO SEGURA
+    // 'alter: true' ajusta as colunas sem apagar os dados que você já cadastrou.
     await db.sequelize.sync({ alter: true });
-    console.log("✅ Tabelas sincronizadas.");
+    console.log("✅ Tabelas sincronizadas e preservadas.");
 
-    // Garantir que a Escola 2 existe (ID base do seu sistema)
+    // 3️⃣ GARANTIR ESCOLA ID 2
     await db.Escola.findOrCreate({
       where: { id: 2 },
       defaults: {
@@ -95,21 +102,24 @@ async function bootstrap() {
       }
     });
 
-    // Garantir que seu usuário está vinculado à Escola 2
+    // 4️⃣ GARANTIR VÍNCULO DO ADMIN COM A ESCOLA 2
     const adminEmail = "valdemir.marques1925@gmail.com";
     const user = await db.User.findOne({ where: { email: adminEmail } });
     
     if (user && user.escolaId !== 2) {
       await user.update({ escolaId: 2 });
-      console.log("👤 Escola do Admin corrigida para ID 2.");
+      console.log("👤 Usuário Admin vinculado corretamente à Escola ID 2.");
     }
 
     app.listen(PORT, () => {
-      console.log(`🚀 Servidor rodando em: https://api-gestao-danca.onrender.com`);
+      console.log("--------------------------------------------------");
+      console.log(`🚀 SERVIDOR RODANDO: https://api-gestao-danca.onrender.com`);
+      console.log("--------------------------------------------------");
     });
 
   } catch (err) {
-    console.error("❌ Erro no bootstrap:", err.message);
+    console.error("❌ Erro fatal no bootstrap:", err.message);
+    // Tenta manter o servidor ativo para o Render não derrubar o serviço
     if (!app.listening) app.listen(PORT);
   }
 }
