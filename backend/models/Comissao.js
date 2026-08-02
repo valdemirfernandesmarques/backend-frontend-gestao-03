@@ -5,9 +5,9 @@ module.exports = (sequelize, DataTypes) => {
     {
       professorId: {
         type: DataTypes.INTEGER,
-        allowNull: false,
+        allowNull: true, // 👈 CORRIGIDO: Deve ser true para permitir onDelete: 'SET NULL'
         references: {
-          model: 'professor',
+          model: 'Professors', // ou 'professor' dependendo do nome da tabela no MySQL
           key: 'id'
         },
         onUpdate: 'CASCADE',
@@ -34,9 +34,19 @@ module.exports = (sequelize, DataTypes) => {
   );
 
   Comissao.associate = (models) => {
-    Comissao.belongsTo(models.Professor, { as: 'professor', foreignKey: 'professorId' });
-    Comissao.belongsTo(models.Pagamento, { as: 'pagamento', foreignKey: 'pagamentoId' });
-    // Removida associação com Modalidade
+    Comissao.belongsTo(models.Professor, { 
+      as: 'professor', 
+      foreignKey: 'professorId',
+      onDelete: 'SET NULL',
+      onUpdate: 'CASCADE'
+    });
+    
+    Comissao.belongsTo(models.Pagamento, { 
+      as: 'pagamento', 
+      foreignKey: 'pagamentoId',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE'
+    });
   };
 
   return Comissao;
