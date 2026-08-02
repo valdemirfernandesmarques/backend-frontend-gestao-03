@@ -1,6 +1,7 @@
 // backend/server.js
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const db = require("./models");
 const bcrypt = require("bcryptjs");
 require("dotenv").config();
@@ -56,7 +57,7 @@ const superAdminDashboardRoutes = require("./routes/superAdminDashboardRoutes");
 const transacoesFinanceirasRoutes = require("./routes/transacoesFinanceirasRoutes");
 
 // ===============================
-// ===== Registro das Rotas =====
+// ===== Registro das Rotas API =====
 // ===============================
 
 // 🔓 ATIVAÇÃO (pública)
@@ -94,11 +95,35 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/super", superAdminDashboardRoutes);
 
 // 🚀 SUPER_ADMIN — FINANCEIRO DA PLATAFORMA
-// (Transações, taxas, isenções, gateway, split, etc.)
 app.use(
   "/api/super/transacoes-financeiras",
   transacoesFinanceirasRoutes
 );
+
+// ===============================
+// 🌐 SERVIR O FRONTEND (React/Vite)
+// ===============================
+// Servir arquivos estáticos gerados na pasta dist/ (ou build/)
+app.use(express.static(path.join(__dirname, "../dist")));
+app.use(express.static(path.join(__dirname, "public")));
+
+// Para qualquer outra rota que NÃO seja /api, entrega o index.html do Frontend (Single Page Application)
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    return next();
+  }
+  const frontendPath = path.join(__dirname, "../dist/index.html");
+  res.sendFile(frontendPath, (err) => {
+    if (err) {
+      // Caso a pasta dist esteja na mesma raiz
+      res.sendFile(path.join(__dirname, "public/index.html"), (err2) => {
+        if (err2) {
+          res.status(404).send("API rodando. Frontend em build...");
+        }
+      });
+    }
+  });
+});
 
 // ===============================
 // ===== Criação Automática do Super Admin =====
@@ -140,7 +165,7 @@ async function criarSuperAdmin() {
 // ===============================
 // ===== Inicialização do Servidor =====
 // ===============================
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
 if (db.sequelize) {
   db.sequelize
