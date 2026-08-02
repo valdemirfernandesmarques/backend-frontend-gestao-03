@@ -32,7 +32,7 @@ db.Sequelize = Sequelize;
 // ===============================
 // MODELS
 // ===============================
-db.Escola = require("./Escola")(sequelize, DataTypes);
+db.escola = require("./escola")(sequelize, DataTypes);
 db.User = require("./User")(sequelize, DataTypes);
 
 // 🔐 RECUPERAÇÃO DE SENHA (ESTAVA FALTANDO)
