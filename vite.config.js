@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://www.gestaoemdanca.com.br',
+        target: 'http://www.gestaoemdanca.com.br/api',
         changeOrigin: true,
       }
     }
