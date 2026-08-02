@@ -167,22 +167,31 @@ async function criarSuperAdmin() {
 // ===============================
 const PORT = process.env.PORT || 10000;
 
-if (db.sequelize) {
-  db.sequelize
-    .sync()
-    .then(async () => {
+async function inicializarServidor() {
+  if (db.sequelize) {
+    try {
+      // Desativa verificação de chaves estrangeiras para evitar o erro ER_FK_CANNOT_OPEN_PARENT
+      await db.sequelize.query("SET FOREIGN_KEY_CHECKS = 0;");
+      
+      await db.sequelize.sync();
+      
+      // Reativa verificação de chaves estrangeiras
+      await db.sequelize.query("SET FOREIGN_KEY_CHECKS = 1;");
+
       console.log("🎯 Banco de dados sincronizado!");
       await criarSuperAdmin();
 
       app.listen(PORT, () =>
         console.log(`🚀 Servidor rodando na porta ${PORT}`)
       );
-    })
-    .catch((err) => {
+    } catch (err) {
       console.error("❌ Erro ao sincronizar banco:", err);
-    });
-} else {
-  console.error(
-    "❌ db.sequelize não encontrado. Verifique o arquivo models/index.js"
-  );
+    }
+  } else {
+    console.error(
+      "❌ db.sequelize não encontrado. Verifique o arquivo models/index.js"
+    );
+  }
 }
+
+inicializarServidor();
