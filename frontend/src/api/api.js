@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const api = axios.create({
   // URL oficial do seu backend no Render
-  baseURL: 'https://api-gestao-danca.onrender.com/api',
+  baseURL: 'https://gestaoemdanca.com.br/api',
   timeout: 30000, 
 });
 
