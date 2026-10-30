@@ -62,6 +62,13 @@ const routes = [
     component: ResetSenha
   },
 
+  // 🔐 Rota em português para compatibilidade com links /reset-senha/:token
+  {
+    path: '/reset-senha/:token',
+    name: 'ResetSenhaPt',
+    component: ResetSenha
+  },
+
   // 🔹 FORMULÁRIO DE ATIVAÇÃO
   {
     path: '/ativacao',
