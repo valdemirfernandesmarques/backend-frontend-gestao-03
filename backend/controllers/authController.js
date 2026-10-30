@@ -43,7 +43,7 @@ exports.login = async (req, res) => {
         perfil: user.perfil,
         escolaId: user.escolaId,
       },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || "secreto_gestao_danca",
       { expiresIn: "8h" }
     );
 
@@ -91,45 +91,58 @@ exports.forgotPassword = async (req, res) => {
       expiresAt,
     });
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+    // 🌐 URL do Frontend com fallback dinâmico para Netlify se FRONTEND_URL não existir
+    const frontendUrl =
+      process.env.FRONTEND_URL ||
+      process.env.URL_FRONTEND ||
+      "https://gestaoemdanca.netlify.app";
+
+    const resetLink = `${frontendUrl.replace(/\/$/, "")}/reset-password/${token}`;
 
     // ================================
-    // ENVIO DE E-MAIL REAL
+    // ENVIO DE E-MAIL REAL (Suporta EMAIL_* e MAIL_*)
     // ================================
     if (nodemailer) {
+      const host = process.env.EMAIL_HOST || process.env.MAIL_HOST || "smtp.gmail.com";
+      const port = Number(process.env.EMAIL_PORT || process.env.MAIL_PORT || 587);
+      const mailUser = process.env.EMAIL_USER || process.env.MAIL_USER;
+      const mailPass = process.env.EMAIL_PASS || process.env.MAIL_PASS;
+      const mailFrom = mailUser || process.env.MAIL_FROM_EMAIL || "gestaoemdanca@gmail.com";
+
       const transporter = nodemailer.createTransport({
-        host: process.env.MAIL_HOST,
-        port: Number(process.env.MAIL_PORT),
-        secure: process.env.MAIL_SECURE === "true",
+        host,
+        port,
+        secure: port === 465, // True para 465, False para 587/Outros
         auth: {
-          user: process.env.MAIL_USER,
-          pass: process.env.MAIL_PASS,
+          user: mailUser,
+          pass: mailPass,
         },
       });
 
       await transporter.sendMail({
-        from: `"${process.env.MAIL_FROM_NAME}" <${process.env.MAIL_FROM_EMAIL}>`,
+        from: `"Gestão em Dança" <${mailFrom}>`,
         to: user.email,
-        subject: "Recuperação de senha",
+        subject: "Recuperação de Senha - Gestão em Dança",
         html: `
-          <div style="font-family: Arial, sans-serif;">
-            <h2>Recuperação de Senha</h2>
-            <p>Você solicitou a redefinição de senha.</p>
-            <p>Clique no botão abaixo para criar uma nova senha:</p>
-            <p>
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+            <h2 style="color: #ff3c78;">Recuperação de Senha</h2>
+            <p style="color: #333;">Você solicitou a redefinição de sua senha de acesso ao <strong>Gestão em Dança</strong>.</p>
+            <p style="color: #333;">Clique no botão abaixo para cadastrar uma nova senha:</p>
+            <p style="text-align: center; margin: 30px 0;">
               <a href="${resetLink}"
-                 style="display:inline-block;padding:10px 20px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:6px;">
-                Redefinir senha
+                 style="display:inline-block;padding:12px 24px;background:#ff3c78;color:#fff;text-decoration:none;border-radius:6px;font-weight:bold;">
+                Redefinir minha senha
               </a>
             </p>
-            <p>Este link expira em 1 hora.</p>
+            <p style="color: #666; font-size: 13px;">Se você não solicitou essa alteração, basta ignorar este e-mail.</p>
+            <p style="color: #666; font-size: 13px;">Este link expira em 1 hora.</p>
           </div>
         `,
       });
 
-      console.log("📧 E-mail de recuperação enviado para:", user.email);
+      console.log("📧 E-mail de recuperação enviado com sucesso para:", user.email);
     } else {
-      console.log("⚠️ Token gerado (modo DEV):", resetLink);
+      console.log("⚠️ Nodemailer indisponível. Link gerado:", resetLink);
     }
 
     return res.json({
