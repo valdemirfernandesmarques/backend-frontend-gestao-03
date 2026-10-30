@@ -206,7 +206,7 @@ function showNotification(msg, err = false) {
 
 function getImageUrl(filename) {
     if (!filename) return null;
-    return `https://backend-frontend-gestao-03.onrender.com/uploads/produtos/${filename}`;
+    return `https://backend-frontend-gestao-03-1.onrender.com/uploads/produtos/${filename}`;
 }
 
 // --- PRODUTOS ---

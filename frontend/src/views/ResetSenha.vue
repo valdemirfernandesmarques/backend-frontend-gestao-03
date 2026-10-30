@@ -99,7 +99,7 @@ export default {
 
       try {
         await axios.post(
-          `https://backend-frontend-gestao-03.onrender.com/api/auth/reset-password/${token}`,
+          `https://backend-frontend-gestao-03-1.onrender.com/api/auth/reset-password/${token}`,
           { password: password.value }
         )
 

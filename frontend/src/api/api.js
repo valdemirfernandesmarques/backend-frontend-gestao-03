@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const api = axios.create({
   // Usa a variável de ambiente ou força o HTTPS no fallback para produção
-  baseURL: import.meta.env.VITE_API_URL || 'https://backend-frontend-gestao-03.onrender.com/api',
+  baseURL: import.meta.env.VITE_API_URL || 'https://backend-frontend-gestao-03-1.onrender.com/api',
   timeout: 10000,
 });
 

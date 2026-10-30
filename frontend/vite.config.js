@@ -14,7 +14,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://backend-frontend-gestao-03.onrender.com/api',
+        target: 'https://backend-frontend-gestao-03-1.onrender.com/api',
         changeOrigin: true,
       }
     }

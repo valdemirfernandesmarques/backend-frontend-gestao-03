@@ -85,7 +85,7 @@ export default {
 
     const submitForm = async () => {
       try {
-        await axios.post('https://backend-frontend-gestao-03.onrender.com/escolas', form.value, config)
+        await axios.post('https://backend-frontend-gestao-03-1.onrender.com/escolas', form.value, config)
         alert('Escola cadastrada com sucesso!')
       } catch (err) {
         console.error('Erro ao salvar escola:', err)

@@ -89,7 +89,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../api/api'
 
-const BASE_URL_SERVER = 'https://backend-frontend-gestao-03.onrender.com/api'
+const BASE_URL_SERVER = 'https://backend-frontend-gestao-03-1.onrender.com/api'
 const router = useRouter()
 
 // Puxa o nome da escola que foi salvo na ativação
