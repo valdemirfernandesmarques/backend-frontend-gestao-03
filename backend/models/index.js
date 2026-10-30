@@ -1,6 +1,22 @@
 // backend/models/index.js
 const { Sequelize, DataTypes } = require("sequelize");
+const fs = require("fs");
+const path = require("path");
 require("dotenv").config();
+
+// Função auxiliar para importar arquivos independente de maiúsculas/minúsculas (Linux/Render)
+function requireModelSafely(modelName) {
+  const files = fs.readdirSync(__dirname);
+  const matchedFile = files.find(
+    (file) => file.toLowerCase() === `${modelName.toLowerCase()}.js`
+  );
+
+  if (matchedFile) {
+    return require(path.join(__dirname, matchedFile));
+  }
+  // Fallback padrão caso não encontre
+  return require(`./${modelName}`);
+}
 
 // ===============================
 // CONEXÃO COM BANCO (AIVEN CLOUD / LOCAL)
@@ -41,39 +57,39 @@ db.Sequelize = Sequelize;
 // ===============================
 // MODELS
 // ===============================
-db.Escola = require("./Escola")(sequelize, DataTypes);
-db.User = require("./User")(sequelize, DataTypes);
+db.Escola = requireModelSafely("Escola")(sequelize, DataTypes);
+db.User = requireModelSafely("User")(sequelize, DataTypes);
 
 // 🔐 RECUPERAÇÃO DE SENHA
-db.PasswordResetToken = require("./PasswordResetToken")(sequelize, DataTypes);
+db.PasswordResetToken = requireModelSafely("PasswordResetToken")(sequelize, DataTypes);
 
-db.Aluno = require("./Aluno")(sequelize, DataTypes);
-db.Professor = require("./Professor")(sequelize, DataTypes);
-db.Funcionario = require("./Funcionario")(sequelize, DataTypes);
+db.Aluno = requireModelSafely("Aluno")(sequelize, DataTypes);
+db.Professor = requireModelSafely("Professor")(sequelize, DataTypes);
+db.Funcionario = requireModelSafely("Funcionario")(sequelize, DataTypes);
 
-db.Modalidade = require("./Modalidade")(sequelize, DataTypes);
-db.Turma = require("./Turma")(sequelize, DataTypes);
+db.Modalidade = requireModelSafely("Modalidade")(sequelize, DataTypes);
+db.Turma = requireModelSafely("Turma")(sequelize, DataTypes);
 
-db.Matricula = require("./Matricula")(sequelize, DataTypes);
-db.Mensalidade = require("./Mensalidade")(sequelize, DataTypes);
+db.Matricula = requireModelSafely("Matricula")(sequelize, DataTypes);
+db.Mensalidade = requireModelSafely("Mensalidade")(sequelize, DataTypes);
 
-db.Pagamento = require("./Pagamento")(sequelize, DataTypes);
+db.Pagamento = requireModelSafely("Pagamento")(sequelize, DataTypes);
 
 // FINANCEIRO
-db.LancamentoFinanceiro = require("./LancamentoFinanceiro")(sequelize, DataTypes);
-db.Comissao = require("./Comissao")(sequelize, DataTypes);
+db.LancamentoFinanceiro = requireModelSafely("LancamentoFinanceiro")(sequelize, DataTypes);
+db.Comissao = requireModelSafely("Comissao")(sequelize, DataTypes);
 
 // VENDAS
-db.Produto = require("./Produto")(sequelize, DataTypes);
-db.Venda = require("./Venda")(sequelize, DataTypes);
-db.VendaItem = require("./VendaItem")(sequelize, DataTypes);
+db.Produto = requireModelSafely("Produto")(sequelize, DataTypes);
+db.Venda = requireModelSafely("Venda")(sequelize, DataTypes);
+db.VendaItem = requireModelSafely("VendaItem")(sequelize, DataTypes);
 
 // RELAÇÕES
-db.ProfessorModalidade = require("./ProfessorModalidade")(sequelize, DataTypes);
+db.ProfessorModalidade = requireModelSafely("ProfessorModalidade")(sequelize, DataTypes);
 
 // SUPER_ADMIN
-db.IsencaoTaxa = require("./IsencaoTaxa")(sequelize, DataTypes);
-db.TransacaoFinanceira = require("./TransacaoFinanceira")(sequelize, DataTypes);
+db.IsencaoTaxa = requireModelSafely("IsencaoTaxa")(sequelize, DataTypes);
+db.TransacaoFinanceira = requireModelSafely("TransacaoFinanceira")(sequelize, DataTypes);
 
 // ===============================
 // ASSOCIAÇÕES
